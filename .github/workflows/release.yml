@@ -151,13 +151,7 @@ jobs:
                '
               map(
                 if .guid == $guid then
-                  .versions = (
-                    [{version: $version, changelog: $changelog, targetAbi: $targetAbi, sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
-                    + (.versions // [])
-                    | unique_by(.version + "|" + .targetAbi)
-                    | sort_by(.version, .targetAbi)
-                    | reverse
-                  )
+                  .versions = [{version: $version, changelog: $changelog, targetAbi: $targetAbi, sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
                 else .
                 end
               )
@@ -165,19 +159,17 @@ jobs:
             mv manifest.tmp manifest.json
           }
 
-          for ABI in "10.10" "10.11"; do
-            add_manifest_entry \
-              "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" \
-              "custom-menu-links" \
-              "${ABI}" \
-              "Release ${VERSION} for Jellyfin ${ABI}"
+          add_manifest_entry \
+            "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" \
+            "custom-menu-links" \
+            "10.11" \
+            "Release ${VERSION} for Jellyfin 10.11"
 
-            add_manifest_entry \
-              "b7e4d1a2-8c3f-4b6e-9d2a-1f0c5e8b6d3a" \
-              "custom-login-buttons" \
-              "${ABI}" \
-              "Release ${VERSION} for Jellyfin ${ABI}"
-          done
+          add_manifest_entry \
+            "b7e4d1a2-8c3f-4b6e-9d2a-1f0c5e8b6d3a" \
+            "custom-login-buttons" \
+            "10.11" \
+            "Release ${VERSION} for Jellyfin 10.11"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2

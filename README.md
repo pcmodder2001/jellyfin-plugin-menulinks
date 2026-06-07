@@ -176,34 +176,50 @@ Common causes and fixes:
 
 | Log message | Fix |
 |-------------|-----|
-| `checksum ... doesn't match` | Jellyfin has a stale manifest. Remove the repo under **Plugins → Repositories**, re-add with the jsDelivr URL below, restart Jellyfin, try again. |
+| `checksum ... doesn't match` | Stale manifest cache. Re-add the repo using the **releases/latest** URL below and restart Jellyfin. |
 | `Access to the path ... is denied` | Fix plugin folder permissions (see below). |
 | `Directory does not exist to extract to` | Delete leftover plugin folders, restart, install again. |
 
-**Clean up old installs (Ubuntu):**
+### Why do I see the same version twice?
+
+The catalog used to list **two builds per plugin** (Jellyfin 10.10 and 10.11). On a 10.11 server like yours, both looked like duplicate **1.0.0.6** entries and Jellyfin could pick the wrong one.
+
+The manifest now lists **one 10.11 build per plugin**. Jellyfin 10.10 users can still install the `_10.10.zip` files manually from [GitHub Releases](https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases).
+
+**Clean up old or failed installs (Ubuntu):**
 
 ```bash
 sudo systemctl stop jellyfin
 sudo ls /var/lib/jellyfin/plugins/
-# Remove any folder starting with "Custom Menu Links"
 sudo rm -rf "/var/lib/jellyfin/plugins/Custom Menu Links"*
+sudo rm -rf "/var/lib/jellyfin/plugins/Custom Login Buttons"*
 sudo chown -R jellyfin:jellyfin /var/lib/jellyfin/plugins
 sudo systemctl start jellyfin
 ```
 
-**Manual install (bypasses the catalog):**
+**Manual install — Custom Login Buttons (10.11):**
+
+```bash
+sudo systemctl stop jellyfin
+sudo mkdir -p "/var/lib/jellyfin/plugins/Custom Login Buttons"
+cd /tmp
+curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.6/custom-login-buttons_1.0.0.6_10.11.zip"
+sudo unzip -o plugin.zip -d "/var/lib/jellyfin/plugins/Custom Login Buttons"
+sudo chown -R jellyfin:jellyfin "/var/lib/jellyfin/plugins/Custom Login Buttons"
+sudo systemctl start jellyfin
+```
+
+**Manual install — Custom Menu Links (10.11):**
 
 ```bash
 sudo systemctl stop jellyfin
 sudo mkdir -p "/var/lib/jellyfin/plugins/Custom Menu Links"
 cd /tmp
-curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.5/custom-menu-links_1.0.0.5_10.11.zip"
+curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.6/custom-menu-links_1.0.0.6_10.11.zip"
 sudo unzip -o plugin.zip -d "/var/lib/jellyfin/plugins/Custom Menu Links"
 sudo chown -R jellyfin:jellyfin "/var/lib/jellyfin/plugins/Custom Menu Links"
 sudo systemctl start jellyfin
 ```
-
-Use the `_10.10.zip` build only if your server is Jellyfin 10.10.x.
 
 ## Server won't start after installing?
 
