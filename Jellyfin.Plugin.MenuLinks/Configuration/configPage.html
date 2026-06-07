@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Custom Menu Links</title>
+</head>
+<body>
+    <div id="MenuLinksConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="MenuLinksConfigForm">
+                    <p>
+                        Add custom links to the Jellyfin Web side navigation menu.
+                        Links appear below Home and open in a new tab.
+                        After saving, refresh the web client to see changes.
+                    </p>
+
+                    <div class="fieldDescription">
+                        Icons use <a href="https://jossef.github.io/material-design-icons-iconfont/" target="_blank" rel="noopener">Material Design Icons</a>.
+                        Leave the icon blank to use the default "link" icon.
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2>Menu Links</h2>
+                        <div id="menuLinksList"></div>
+                        <button type="button" id="btnAddLink" class="button-link">Add Link</button>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2>Advanced</h2>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtCustomWebConfigPath">Custom config.json path (optional)</label>
+                            <input id="txtCustomWebConfigPath" name="CustomWebConfigPath" type="text" is="emby-input" />
+                            <div class="fieldDescription">
+                                Override the web client config.json location if your install uses a custom path (common with Docker).
+                                Leave blank to use the server's default web path.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <template id="menuLinkRowTemplate">
+        <div class="menuLinkRow verticalSection verticalSection-extrabottompadding">
+            <div class="inputContainer">
+                <label class="inputLabel inputLabelUnfocused menuLinkNameLabel">Name</label>
+                <input class="menuLinkName" type="text" is="emby-input" required />
+            </div>
+            <div class="inputContainer">
+                <label class="inputLabel inputLabelUnfocused menuLinkUrlLabel">URL</label>
+                <input class="menuLinkUrl" type="url" is="emby-input" required />
+            </div>
+            <div class="inputContainer">
+                <label class="inputLabel inputLabelUnfocused menuLinkIconLabel">Icon (optional)</label>
+                <input class="menuLinkIcon" type="text" is="emby-input" placeholder="link" />
+            </div>
+            <div class="flex align-items-center">
+                <button type="button" class="btnMoveUp raised emby-button">Move Up</button>
+                <button type="button" class="btnMoveDown raised emby-button">Move Down</button>
+                <button type="button" class="btnRemove raised emby-button button-delete">Remove</button>
+            </div>
+        </div>
+    </template>
+
+    <script type="text/javascript">
+        var MenuLinksConfig = {
+            pluginUniqueId: 'a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f'
+        };
+
+        function getMenuLinksFromDom() {
+            var rows = document.querySelectorAll('#menuLinksList .menuLinkRow');
+            var links = [];
+
+            rows.forEach(function (row) {
+                var name = row.querySelector('.menuLinkName').value.trim();
+                var url = row.querySelector('.menuLinkUrl').value.trim();
+                var icon = row.querySelector('.menuLinkIcon').value.trim();
+
+                if (!name && !url) {
+                    return;
+                }
+
+                links.push({
+                    Name: name,
+                    Url: url,
+                    Icon: icon || null
+                });
+            });
+
+            return links;
+        }
+
+        function addMenuLinkRow(link) {
+            var template = document.querySelector('#menuLinkRowTemplate');
+            var row = template.content.firstElementChild.cloneNode(true);
+
+            row.querySelector('.menuLinkName').value = link && link.Name ? link.Name : '';
+            row.querySelector('.menuLinkUrl').value = link && link.Url ? link.Url : '';
+            row.querySelector('.menuLinkIcon').value = link && link.Icon ? link.Icon : '';
+
+            row.querySelector('.btnRemove').addEventListener('click', function () {
+                row.remove();
+            });
+
+            row.querySelector('.btnMoveUp').addEventListener('click', function () {
+                var previous = row.previousElementSibling;
+                if (previous) {
+                    row.parentNode.insertBefore(row, previous);
+                }
+            });
+
+            row.querySelector('.btnMoveDown').addEventListener('click', function () {
+                var next = row.nextElementSibling;
+                if (next) {
+                    row.parentNode.insertBefore(next, row);
+                }
+            });
+
+            document.querySelector('#menuLinksList').appendChild(row);
+        }
+
+        function renderMenuLinks(links) {
+            var list = document.querySelector('#menuLinksList');
+            list.innerHTML = '';
+
+            if (links && links.length) {
+                links.forEach(addMenuLinkRow);
+            } else {
+                addMenuLinkRow();
+            }
+        }
+
+        document.querySelector('#btnAddLink').addEventListener('click', function () {
+            addMenuLinkRow();
+        });
+
+        document.querySelector('#MenuLinksConfigPage').addEventListener('pageshow', function () {
+            Dashboard.showLoadingMsg();
+
+            ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
+                renderMenuLinks(config.MenuLinks || []);
+                document.querySelector('#txtCustomWebConfigPath').value = config.CustomWebConfigPath || '';
+                Dashboard.hideLoadingMsg();
+            });
+        });
+
+        document.querySelector('#MenuLinksConfigForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            Dashboard.showLoadingMsg();
+
+            ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
+                config.MenuLinks = getMenuLinksFromDom();
+                config.CustomWebConfigPath = document.querySelector('#txtCustomWebConfigPath').value.trim();
+
+                ApiClient.updatePluginConfiguration(MenuLinksConfig.pluginUniqueId, config).then(function (result) {
+                    Dashboard.processPluginConfigurationUpdateResult(result);
+                });
+            });
+
+            return false;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f",
+    "name": "Custom Menu Links",
+    "overview": "Manage custom Jellyfin Web side menu links from the dashboard",
+    "description": "Provides a simple dashboard UI for adding, editing, and reordering custom side menu links in Jellyfin Web. Changes are written to the web client config.json automatically.",
+    "owner": "bradl",
+    "category": "General",
+    "versions": []
+  }
+]

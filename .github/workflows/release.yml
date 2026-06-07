@@ -1,0 +1,141 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Plugin version (e.g. 1.0.0.0)"
+        required: true
+        default: "1.0.0.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: dotnet build Jellyfin.Plugin.MenuLinks.sln --configuration Release
+
+      - name: Package plugin zip
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          PACKAGE_DIR="dist/custom-menu-links"
+          ZIP_NAME="custom-menu-links_${VERSION}.zip"
+
+          mkdir -p "${PACKAGE_DIR}"
+          cp Jellyfin.Plugin.MenuLinks/bin/Release/net9.0/Jellyfin.Plugin.MenuLinks.dll "${PACKAGE_DIR}/"
+
+          TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          cat > "${PACKAGE_DIR}/meta.json" <<EOF
+          {
+            "guid": "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f",
+            "name": "Custom Menu Links",
+            "overview": "Manage custom Jellyfin Web side menu links from the dashboard",
+            "description": "Provides a simple dashboard UI for adding, editing, and reordering custom side menu links in Jellyfin Web. Changes are written to the web client config.json automatically.",
+            "owner": "bradl",
+            "category": "General",
+            "version": "${VERSION}",
+            "targetAbi": "10.11.0.0",
+            "changelog": "Release ${VERSION}",
+            "timestamp": "${TIMESTAMP}",
+            "status": "Active",
+            "autoUpdate": true,
+            "assemblies": ["Jellyfin.Plugin.MenuLinks.dll"]
+          }
+          EOF
+
+          mkdir -p dist
+          (cd "${PACKAGE_DIR}" && zip -r "../${ZIP_NAME}" .)
+          md5sum "dist/${ZIP_NAME}" | awk '{print $1}' > "dist/${ZIP_NAME}.md5"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Custom Menu Links ${{ steps.version.outputs.version }}
+          files: |
+            dist/custom-menu-links_${{ steps.version.outputs.version }}.zip
+            dist/custom-menu-links_${{ steps.version.outputs.version }}.zip.md5
+          generate_release_notes: true
+
+      - name: Update manifest.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+          ZIP_NAME="custom-menu-links_${VERSION}.zip"
+          CHECKSUM="$(cat "dist/${ZIP_NAME}.md5")"
+          TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
+
+          jq --arg version "${VERSION}" \
+             --arg checksum "${CHECKSUM}" \
+             --arg sourceUrl "${SOURCE_URL}" \
+             --arg timestamp "${TIMESTAMP}" \
+             --arg changelog "Release ${VERSION}" \
+             '
+            map(
+              if .guid == "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" then
+                .versions = (
+                  [{version: $version, changelog: $changelog, targetAbi: "10.11.0.0", sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
+                  + (.versions // [])
+                  | unique_by(.version)
+                )
+              else .
+              end
+            )
+            ' manifest.json > manifest.tmp
+          mv manifest.tmp manifest.json
+
+      - name: Commit updated manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          MANIFEST_TMP="$(mktemp)"
+          cp manifest.json "$MANIFEST_TMP"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+          git fetch origin "${DEFAULT_BRANCH}"
+          git checkout "${DEFAULT_BRANCH}"
+          cp "$MANIFEST_TMP" manifest.json
+
+          git add manifest.json
+          if git diff --cached --quiet; then
+            echo "manifest.json unchanged"
+            exit 0
+          fi
+
+          git commit -m "chore(repo): update manifest for ${{ steps.version.outputs.version }}"
+          git push origin "${DEFAULT_BRANCH}"
