@@ -245,7 +245,7 @@ sudo systemctl start jellyfin
 sudo systemctl stop jellyfin
 sudo mkdir -p "/var/lib/jellyfin/plugins/Account Portal"
 cd /tmp
-curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.9/account-portal_1.0.0.9_10.11.zip"
+curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.10/account-portal_1.0.0.10_10.11.zip"
 sudo unzip -o plugin.zip -d "/var/lib/jellyfin/plugins/Account Portal"
 sudo chown -R jellyfin:jellyfin "/var/lib/jellyfin/plugins/Account Portal"
 sudo systemctl start jellyfin

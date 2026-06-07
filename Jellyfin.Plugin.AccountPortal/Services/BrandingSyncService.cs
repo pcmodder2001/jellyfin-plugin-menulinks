@@ -149,7 +149,7 @@ public partial class BrandingSyncService
 
     internal static string BuildPrimaryLink(string path, string label)
     {
-        return $"<a href=\"{WebUtility.HtmlEncode(path)}\" class=\"raised block emby-button jellyfinPluginLoginBtn jellyfinPluginBtnSignUp\"><span>{WebUtility.HtmlEncode(label)}</span></a>";
+        return $"<a href=\"{WebUtility.HtmlEncode(path)}\" class=\"raised button-submit block emby-button jellyfinPluginLoginBtn jellyfinPluginBtnSignUp\"><span>{WebUtility.HtmlEncode(label)}</span></a>";
     }
 
     internal static string BuildSecondaryLink(string path, string label)
@@ -215,7 +215,6 @@ public partial class BrandingSyncService
               margin-right: auto;
               margin-bottom: 1em;
               text-decoration: none;
-              color: inherit !important;
               box-sizing: border-box;
               text-align: center;
             }
