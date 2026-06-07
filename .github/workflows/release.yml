@@ -1,4 +1,4 @@
-name: Release Plugin
+name: Release Plugins
 
 on:
   push:
@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Plugin version (e.g. 1.0.0.3)"
+        description: "Plugin version (e.g. 1.0.0.6)"
         required: true
-        default: "1.0.0.3"
+        default: "1.0.0.6"
 
 permissions:
   contents: write
@@ -54,21 +54,29 @@ jobs:
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           mkdir -p dist
 
-          package_abi() {
-            local ABI="$1"
-            local FRAMEWORK="$2"
-            local PACKAGE_DIR="dist/custom-menu-links-${ABI}"
-            local ZIP_NAME="custom-menu-links_${VERSION}_${ABI}.zip"
+          package_plugin() {
+            local SLUG="$1"
+            local GUID="$2"
+            local NAME="$3"
+            local OVERVIEW="$4"
+            local DESCRIPTION="$5"
+            local PROJECT="$6"
+            local ASSEMBLY="$7"
+            local ABI="$8"
+            local FRAMEWORK="$9"
+
+            local PACKAGE_DIR="dist/${SLUG}-${ABI}"
+            local ZIP_NAME="${SLUG}_${VERSION}_${ABI}.zip"
 
             mkdir -p "${PACKAGE_DIR}"
-            cp "Jellyfin.Plugin.MenuLinks/bin/Release/${FRAMEWORK}/Jellyfin.Plugin.MenuLinks.dll" "${PACKAGE_DIR}/"
+            cp "${PROJECT}/bin/Release/${FRAMEWORK}/${ASSEMBLY}" "${PACKAGE_DIR}/"
 
             cat > "${PACKAGE_DIR}/meta.json" <<EOF
           {
-            "guid": "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f",
-            "name": "Custom Menu Links",
-            "overview": "Manage custom Jellyfin Web side menu links from the dashboard",
-            "description": "Provides a simple dashboard UI for adding, editing, and reordering custom side menu links in Jellyfin Web. Changes are written to the web client config.json automatically.",
+            "guid": "${GUID}",
+            "name": "${NAME}",
+            "overview": "${OVERVIEW}",
+            "description": "${DESCRIPTION}",
             "owner": "pcmodder2001",
             "category": "General",
             "version": "${VERSION}",
@@ -77,7 +85,7 @@ jobs:
             "timestamp": "${TIMESTAMP}",
             "status": "Active",
             "autoUpdate": true,
-            "assemblies": ["Jellyfin.Plugin.MenuLinks.dll"]
+            "assemblies": ["${ASSEMBLY}"]
           }
           EOF
 
@@ -85,19 +93,47 @@ jobs:
             md5sum "dist/${ZIP_NAME}" | awk '{print $1}' > "dist/${ZIP_NAME}.md5"
           }
 
-          package_abi "10.10" "net8.0"
-          package_abi "10.11" "net9.0"
+          for ABI_FRAMEWORK in "10.10 net8.0" "10.11 net9.0"; do
+            ABI="${ABI_FRAMEWORK%% *}"
+            FRAMEWORK="${ABI_FRAMEWORK##* }"
+
+            package_plugin \
+              "custom-menu-links" \
+              "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" \
+              "Custom Menu Links" \
+              "Manage custom Jellyfin Web side menu links from the dashboard" \
+              "Provides a simple dashboard UI for adding, editing, and reordering custom side menu links in Jellyfin Web. Changes are written to the web client config.json automatically." \
+              "Jellyfin.Plugin.MenuLinks" \
+              "Jellyfin.Plugin.MenuLinks.dll" \
+              "${ABI}" \
+              "${FRAMEWORK}"
+
+            package_plugin \
+              "custom-login-buttons" \
+              "b7e4d1a2-8c3f-4b6e-9d2a-1f0c5e8b6d3a" \
+              "Custom Login Buttons" \
+              "Add sign-up and custom forgot-password buttons to the Jellyfin login page" \
+              "Configure a sign-up button and replace the default forgot-password button with a custom URL. Ideal for jfa-go and similar account management tools." \
+              "Jellyfin.Plugin.LoginButtons" \
+              "Jellyfin.Plugin.LoginButtons.dll" \
+              "${ABI}" \
+              "${FRAMEWORK}"
+          done
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: Custom Menu Links ${{ steps.version.outputs.version }}
+          name: Jellyfin Plugins ${{ steps.version.outputs.version }}
           files: |
             dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip
             dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip.md5
             dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip
             dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip.md5
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip.md5
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip.md5
           generate_release_notes: true
 
       - name: Update manifest.json
@@ -113,20 +149,24 @@ jobs:
           git show "origin/${DEFAULT_BRANCH}:manifest.json" > manifest.json
 
           add_manifest_entry() {
-            local ABI="$1"
-            local ZIP_NAME="custom-menu-links_${VERSION}_${ABI}.zip"
+            local GUID="$1"
+            local SLUG="$2"
+            local ABI="$3"
+            local CHANGELOG="$4"
+            local ZIP_NAME="${SLUG}_${VERSION}_${ABI}.zip"
             local CHECKSUM="$(cat "dist/${ZIP_NAME}.md5")"
             local SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
 
-            jq --arg version "${VERSION}" \
+            jq --arg guid "${GUID}" \
+               --arg version "${VERSION}" \
                --arg checksum "${CHECKSUM}" \
                --arg sourceUrl "${SOURCE_URL}" \
                --arg timestamp "${TIMESTAMP}" \
                --arg targetAbi "${ABI}.0.0" \
-               --arg changelog "Release ${VERSION} for Jellyfin ${ABI}" \
+               --arg changelog "${CHANGELOG}" \
                '
               map(
-                if .guid == "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" then
+                if .guid == $guid then
                   .versions = (
                     [{version: $version, changelog: $changelog, targetAbi: $targetAbi, sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
                     + (.versions // [])
@@ -141,8 +181,19 @@ jobs:
             mv manifest.tmp manifest.json
           }
 
-          add_manifest_entry "10.10"
-          add_manifest_entry "10.11"
+          for ABI in "10.10" "10.11"; do
+            add_manifest_entry \
+              "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" \
+              "custom-menu-links" \
+              "${ABI}" \
+              "Release ${VERSION} for Jellyfin ${ABI}"
+
+            add_manifest_entry \
+              "b7e4d1a2-8c3f-4b6e-9d2a-1f0c5e8b6d3a" \
+              "custom-login-buttons" \
+              "${ABI}" \
+              "Release ${VERSION} for Jellyfin ${ABI}"
+          done
 
       - name: Commit updated manifest
         shell: bash

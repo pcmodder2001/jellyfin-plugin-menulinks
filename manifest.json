@@ -22,39 +22,16 @@
         "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.5/custom-menu-links_1.0.0.5_10.10.zip",
         "checksum": "3ef48d03e9b90d81af7b6ec34eb60c61",
         "timestamp": "2026-06-07T13:55:03Z"
-      },
-      {
-        "version": "1.0.0.4",
-        "changelog": "Release 1.0.0.4 for Jellyfin 10.11",
-        "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.4/custom-menu-links_1.0.0.4_10.11.zip",
-        "checksum": "c0a7776259e440eeb2b445b1cb1b1a06",
-        "timestamp": "2026-06-07T13:50:38Z"
-      },
-      {
-        "version": "1.0.0.4",
-        "changelog": "Release 1.0.0.4 for Jellyfin 10.10",
-        "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.4/custom-menu-links_1.0.0.4_10.10.zip",
-        "checksum": "6cce6d72664c47ae388dfe357ec0363d",
-        "timestamp": "2026-06-07T13:50:38Z"
-      },
-      {
-        "version": "1.0.0.3",
-        "changelog": "Fix NotSupported on Jellyfin 10.11 by building against the correct SDK",
-        "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.3/custom-menu-links_1.0.0.3_10.11.zip",
-        "checksum": "1f258d803384b99454cb161390a5d856",
-        "timestamp": "2026-06-07T13:45:20Z"
-      },
-      {
-        "version": "1.0.0.3",
-        "changelog": "Fix NotSupported on Jellyfin 10.10 by building against the correct SDK",
-        "targetAbi": "10.10.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.3/custom-menu-links_1.0.0.3_10.10.zip",
-        "checksum": "a85d0e6c1645e471955b64aab9dbdf15",
-        "timestamp": "2026-06-07T13:45:20Z"
       }
     ]
+  },
+  {
+    "guid": "b7e4d1a2-8c3f-4b6e-9d2a-1f0c5e8b6d3a",
+    "name": "Custom Login Buttons",
+    "overview": "Add sign-up and custom forgot-password buttons to the Jellyfin login page",
+    "description": "Configure a sign-up button and replace the default forgot-password button with a custom URL. Ideal for jfa-go and similar account management tools.",
+    "owner": "pcmodder2001",
+    "category": "General",
+    "versions": []
   }
 ]

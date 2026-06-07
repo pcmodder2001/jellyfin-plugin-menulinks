@@ -1,27 +1,27 @@
-using Jellyfin.Plugin.MenuLinks.Configuration;
-using Jellyfin.Plugin.MenuLinks.Services;
+using Jellyfin.Plugin.LoginButtons.Configuration;
+using Jellyfin.Plugin.LoginButtons.Services;
 using MediaBrowser.Model.Plugins;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.MenuLinks;
+namespace Jellyfin.Plugin.LoginButtons;
 
 /// <summary>
-/// Handles startup sync and configuration change events for menu links.
+/// Handles startup sync and configuration change events for login buttons.
 /// </summary>
 public class ServerEntryPoint : IHostedService, IDisposable
 {
     private static bool _suppressConfigurationSync;
 
-    private readonly WebConfigSyncService _syncService;
+    private readonly BrandingSyncService _syncService;
     private readonly ILogger<ServerEntryPoint> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerEntryPoint"/> class.
     /// </summary>
-    /// <param name="syncService">The web config sync service.</param>
+    /// <param name="syncService">The branding sync service.</param>
     /// <param name="logger">The logger.</param>
-    public ServerEntryPoint(WebConfigSyncService syncService, ILogger<ServerEntryPoint> logger)
+    public ServerEntryPoint(BrandingSyncService syncService, ILogger<ServerEntryPoint> logger)
     {
         _syncService = syncService;
         _logger = logger;
@@ -34,7 +34,7 @@ public class ServerEntryPoint : IHostedService, IDisposable
         {
             if (Plugin.Instance is null)
             {
-                _logger.LogWarning("Custom Menu Links plugin instance is not available during startup");
+                _logger.LogWarning("Custom Login Buttons plugin instance is not available during startup");
                 return Task.CompletedTask;
             }
 
@@ -43,7 +43,7 @@ public class ServerEntryPoint : IHostedService, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Custom Menu Links startup sync failed");
+            _logger.LogError(ex, "Custom Login Buttons startup sync failed");
         }
 
         return Task.CompletedTask;
@@ -68,21 +68,15 @@ public class ServerEntryPoint : IHostedService, IDisposable
         }
 
         var config = Plugin.Instance.Configuration;
-        var menuLinks = config.MenuLinks ?? [];
+        var importedDisclaimer = _syncService.ImportDisclaimerText(config);
+        if (importedDisclaimer is not null)
+        {
+            config.DisclaimerText = importedDisclaimer;
+            Plugin.Instance.SaveConfiguration();
+            return;
+        }
 
-        if (menuLinks.Length == 0)
-        {
-            var imported = _syncService.ReadMenuLinks(config.CustomWebConfigPath);
-            if (imported is { Length: > 0 })
-            {
-                config.MenuLinks = imported;
-                Plugin.Instance.SaveConfiguration();
-            }
-        }
-        else
-        {
-            ApplySyncResult(config, _syncService.SyncMenuLinks(menuLinks, config.CustomWebConfigPath));
-        }
+        ApplySyncResult(config, _syncService.SyncBranding(config));
     }
 
     private void OnConfigurationChanged(object? sender, BasePluginConfiguration configuration)
@@ -99,15 +93,11 @@ public class ServerEntryPoint : IHostedService, IDisposable
                 return;
             }
 
-            ApplySyncResult(
-                pluginConfiguration,
-                _syncService.SyncMenuLinks(
-                    pluginConfiguration.MenuLinks ?? [],
-                    pluginConfiguration.CustomWebConfigPath));
+            ApplySyncResult(pluginConfiguration, _syncService.SyncBranding(pluginConfiguration));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Custom Menu Links configuration sync failed");
+            _logger.LogError(ex, "Custom Login Buttons configuration sync failed");
         }
     }
 
@@ -118,7 +108,6 @@ public class ServerEntryPoint : IHostedService, IDisposable
             return;
         }
 
-        configuration.LastSyncPath = result.ConfigPath;
         configuration.LastSyncStatus = result.Message;
 
         _suppressConfigurationSync = true;

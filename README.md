@@ -1,12 +1,23 @@
-# Jellyfin Custom Menu Links Plugin
+# Jellyfin Custom Web Plugins
 
-A Jellyfin server plugin that provides a dashboard UI for managing custom side menu links in Jellyfin Web — no more hand-editing `config.json`.
+Two Jellyfin server plugins in one repository — install both from the same plugin catalog URL.
 
-## What it does
+| Plugin | What it does |
+|--------|----------------|
+| **Custom Menu Links** | Manage custom side menu links in Jellyfin Web (writes `config.json`) |
+| **Custom Login Buttons** | Add a sign-up button and custom forgot-password link on the login page |
+
+---
+
+## Custom Menu Links
+
+A dashboard UI for managing custom side menu links in Jellyfin Web — no more hand-editing `config.json`.
+
+### What it does
 
 Jellyfin Web supports custom navigation links via the `menuLinks` array in `config.json`. This plugin:
 
-- Lets you add, edit, remove, and reorder links from **Dashboard → Plugins → Custom Menu Links**
+- Lets you add, edit, remove, and reorder links from **Dashboard → Custom Menu Links**
 - Writes changes to the web client's `config.json` automatically
 - Imports existing `menuLinks` on first install if the plugin config is empty
 
@@ -18,10 +29,38 @@ Each link has:
 | URL   | Yes      | Destination (opens in a new tab) |
 | Icon  | No       | [Material Design Icon](https://jossef.github.io/material-design-icons-iconfont/) name (defaults to `link`) |
 
+---
+
+## Custom Login Buttons
+
+A simple settings page for two login-page buttons — no JavaScript bundle editing required.
+
+### What it does
+
+- **Sign up button** — link to your registration page (jfa-go, Authelia, etc.)
+- **Forgot password button** — replace Jellyfin's built-in reset flow with your own URL
+
+Settings are synced to **Dashboard → General → Branding** (login disclaimer + a small CSS block). The plugin merges its CSS with any existing custom CSS using markers, so your other branding CSS is preserved.
+
+Configure under **Dashboard → Custom Login Buttons**:
+
+| Field | Description |
+|-------|-------------|
+| Enable sign-up button | Show/hide the sign-up link |
+| Sign-up URL | e.g. `https://accounts.example.com/signup` |
+| Reset password URL | When set, hides Jellyfin's default forgot-password button |
+| Optional text | Message shown above the buttons |
+
+After saving, hard-refresh the **login page** (Ctrl+Shift+R).
+
+**Note:** If you also edit **Dashboard → General → Branding → Login disclaimer** manually, avoid removing the `<!-- BEGIN Jellyfin.Plugin.LoginButtons -->` block — the plugin manages that section.
+
+---
+
 ## Requirements
 
 - Jellyfin Server **10.10+** (10.10 uses .NET 8, 10.11+ uses .NET 9)
-- Jellyfin Web **10.8+** (for `menuLinks` support)
+- Jellyfin Web **10.8+** (menu links; login disclaimer support)
 
 Check your Jellyfin version on Ubuntu:
 
@@ -29,7 +68,7 @@ Check your Jellyfin version on Ubuntu:
 dpkg -l jellyfin 2>/dev/null | grep jellyfin || jellyfin --version
 ```
 
-If the plugin shows **NotSupported**, the installed build was compiled against the wrong Jellyfin SDK version. Install **v1.0.0.3** or later (built against Jellyfin 10.11 packages for servers like **10.11.5**).
+If a plugin shows **NotSupported**, install the build matching your server version (**v1.0.0.3** or later for Jellyfin 10.11.x).
 
 ## Build
 
@@ -37,10 +76,11 @@ If the plugin shows **NotSupported**, the installed build was compiled against t
 dotnet build Jellyfin.Plugin.MenuLinks.sln --configuration Release
 ```
 
-The output DLL is at:
+Output DLLs:
 
 ```
 Jellyfin.Plugin.MenuLinks/bin/Release/net9.0/Jellyfin.Plugin.MenuLinks.dll
+Jellyfin.Plugin.LoginButtons/bin/Release/net9.0/Jellyfin.Plugin.LoginButtons.dll
 ```
 
 ## Install
@@ -82,15 +122,98 @@ The settings page is in the **admin Dashboard** (not the regular Jellyfin home s
 
 Your custom links then appear in the **regular Jellyfin side menu** below **Home** (not in the Dashboard).
 
+## Links saved but not showing in the sidebar?
+
+The plugin stores links in its own config, then writes them into Jellyfin Web's `config.json`. If the sidebar stays empty, the write step usually failed.
+
+### 1. Check you are looking in the right place
+
+Custom links appear on the **Jellyfin home page** (movies/libraries view), **not** in the admin Dashboard sidebar.
+
+### 2. Fix file permissions (most common on Ubuntu)
+
+On apt installs, `config.json` is often owned by root and the `jellyfin` user cannot write to it:
+
+```bash
+sudo chown jellyfin:jellyfin /usr/share/jellyfin/web/config.json
+sudo chmod 664 /usr/share/jellyfin/web/config.json
+sudo systemctl restart jellyfin
+```
+
+Then open **Custom Menu Links** settings, click **Save** again, and hard-refresh the Jellyfin home page (Ctrl+Shift+R).
+
+### 3. Confirm the links were written
+
+```bash
+grep -A6 menuLinks /usr/share/jellyfin/web/config.json
+```
+
+You should see your link names and URLs in that section.
+
+### 4. Check the Jellyfin log
+
+```bash
+sudo journalctl -u jellyfin -n 80 --no-pager | grep -iE "menu link|config.json|Custom Menu"
+```
+
+Look for `Synced` (success) or `denied` / `not found` (failure).
+
+### 5. Docker or custom web path
+
+If Jellyfin runs in Docker, set **Custom config.json path** in the plugin's Advanced settings to the path **inside the container**, for example `/jellyfin/jellyfin-web/config.json`, and ensure that file is writable by the jellyfin user.
+
+**v1.0.0.6+** shows the last sync result directly on the settings page after you save.
+
+## Install failed ("An error occurred while installing the plugin")?
+
+The release zip and checksums are correct — this error is almost always on the server side. Check the Jellyfin log for the real cause:
+
+```bash
+sudo journalctl -u jellyfin -n 80 --no-pager | grep -iE "install|checksum|denied|plugin|Custom Menu"
+```
+
+Common causes and fixes:
+
+| Log message | Fix |
+|-------------|-----|
+| `checksum ... doesn't match` | Jellyfin has a stale manifest. Remove the repo under **Plugins → Repositories**, re-add with the jsDelivr URL below, restart Jellyfin, try again. |
+| `Access to the path ... is denied` | Fix plugin folder permissions (see below). |
+| `Directory does not exist to extract to` | Delete leftover plugin folders, restart, install again. |
+
+**Clean up old installs (Ubuntu):**
+
+```bash
+sudo systemctl stop jellyfin
+sudo ls /var/lib/jellyfin/plugins/
+# Remove any folder starting with "Custom Menu Links"
+sudo rm -rf "/var/lib/jellyfin/plugins/Custom Menu Links"*
+sudo chown -R jellyfin:jellyfin /var/lib/jellyfin/plugins
+sudo systemctl start jellyfin
+```
+
+**Manual install (bypasses the catalog):**
+
+```bash
+sudo systemctl stop jellyfin
+sudo mkdir -p "/var/lib/jellyfin/plugins/Custom Menu Links"
+cd /tmp
+curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.5/custom-menu-links_1.0.0.5_10.11.zip"
+sudo unzip -o plugin.zip -d "/var/lib/jellyfin/plugins/Custom Menu Links"
+sudo chown -R jellyfin:jellyfin "/var/lib/jellyfin/plugins/Custom Menu Links"
+sudo systemctl start jellyfin
+```
+
+Use the `_10.10.zip` build only if your server is Jellyfin 10.10.x.
+
 ## Server won't start after installing?
 
 A bad plugin can prevent Jellyfin from starting (502 Bad Gateway). To recover:
 
 1. **Stop** Jellyfin
-2. **Delete** the plugin folder:
-   - Windows: `%AppData%\jellyfin\plugins\Custom Menu Links\` (or similar folder name under `plugins\`)
-   - Docker: `/config/plugins/Custom Menu Links/`
-   - Linux: `/var/lib/jellyfin/plugins/Custom Menu Links/`
+2. **Delete** the plugin folder (catalog installs use a version suffix, e.g. `Custom Menu Links_1.0.0.5`):
+   - Windows: `%AppData%\jellyfin\plugins\Custom Menu Links*\`
+   - Docker: `/config/plugins/Custom Menu Links*/`
+   - Linux: `/var/lib/jellyfin/plugins/Custom Menu Links*/`
 3. **Start** Jellyfin again
 
 Then install **v1.0.0.1** or later, which fixes a startup crash caused by dependency injection.
@@ -133,16 +256,12 @@ The workflow will:
 2. Click **+**
 3. Enter:
    - **Name:** `Custom Menu Links`
-   - **URL:** use one of these (in order of preference):
-     1. `https://pcmodder2001.github.io/jellyfin-plugin-menulinks/manifest.json` (best — after one-time Pages setup below)
-     2. `https://cdn.jsdelivr.net/gh/pcmodder2001/jellyfin-plugin-menulinks@main/manifest.json` (works immediately)
+   - **URL:** `https://cdn.jsdelivr.net/gh/pcmodder2001/jellyfin-plugin-menulinks@main/manifest.json`
 4. Click **Save** and confirm the third-party plugin warning
 
-**Never use** `https://raw.githubusercontent.com/.../manifest.json` — GitHub's raw CDN often lags behind the file you see on github.com, so Jellyfin may not see the latest version.
+**Never use** `https://raw.githubusercontent.com/.../manifest.json` — GitHub's raw CDN often lags behind the file you see on github.com, so Jellyfin may not see the latest version or installs fail with a checksum error.
 
-**One-time GitHub setup (repo owner only):** In your repo go to **Settings → Pages → Build and deployment → Source: GitHub Actions**, then run the **Publish Manifest** workflow once under **Actions** (or push any change to `manifest.json`). After that, the `github.io` URL above updates reliably.
-
-**If Jellyfin still shows an old version:** remove the repository entry, re-add it with the jsDelivr or `github.io` URL, then open **Plugins → Catalog** again. Restart Jellyfin if the catalog still looks stale.
+**If Jellyfin still shows an old version:** remove the repository entry, re-add it with the jsDelivr URL above, then open **Plugins → Catalog** again. Restart Jellyfin if the catalog still looks stale.
 
 ### Install and update from the dashboard
 

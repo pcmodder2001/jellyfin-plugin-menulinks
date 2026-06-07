@@ -1,7 +1,7 @@
 ---
 name: "Custom Menu Links"
 guid: "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f"
-version: "1.0.0.5"
+version: "1.0.0.6"
 targetAbi: "10.10.0.0"
 framework: "net8.0"
 overview: "Manage custom Jellyfin Web side menu links from the dashboard"
@@ -14,4 +14,4 @@ owner: "pcmodder2001"
 artifacts:
   - "Jellyfin.Plugin.MenuLinks.dll"
 changelog: >
-  Fix Add Link button by moving config page script and template inside the page container
+  Show config.json sync errors in settings and improve writable path detection

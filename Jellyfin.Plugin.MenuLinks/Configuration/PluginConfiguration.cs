@@ -26,4 +26,14 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Leave empty to use the server's default web path.
     /// </summary>
     public string CustomWebConfigPath { get; set; }
+
+    /// <summary>
+    /// Gets or sets the config.json path from the last sync attempt.
+    /// </summary>
+    public string LastSyncPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the result message from the last sync attempt.
+    /// </summary>
+    public string LastSyncStatus { get; set; } = string.Empty;
 }

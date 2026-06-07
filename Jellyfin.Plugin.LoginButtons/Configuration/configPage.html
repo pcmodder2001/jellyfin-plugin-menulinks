@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Custom Login Buttons</title>
+</head>
+<body>
+    <div id="LoginButtonsConfigPage" data-role="page" class="page type-interior pluginConfigurationPage">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="LoginButtonsConfigForm">
+                    <p>
+                        Add buttons to the Jellyfin <strong>login page</strong>.
+                        Useful with tools like jfa-go for self-registration or external password reset pages.
+                        Hard-refresh the login page after saving.
+                    </p>
+
+                    <div id="syncStatusBox" class="fieldDescription" style="display: none;"></div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2>Sign Up</h2>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label>
+                                <input id="chkEnableSignUp" type="checkbox" is="emby-checkbox" />
+                                <span>Enable sign-up button</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtSignUpUrl">Sign-up URL</label>
+                            <input id="txtSignUpUrl" type="text" is="emby-input" placeholder="https://accounts.example.com/signup" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtSignUpLabel">Button label</label>
+                            <input id="txtSignUpLabel" type="text" is="emby-input" placeholder="Sign Up" />
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2>Forgot Password</h2>
+                        <p class="fieldDescription">
+                            When a URL is set, the default Jellyfin forgot-password button is hidden and replaced with your link.
+                            Leave blank to keep Jellyfin's built-in reset flow.
+                        </p>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtForgotPasswordUrl">Reset password URL</label>
+                            <input id="txtForgotPasswordUrl" type="text" is="emby-input" placeholder="https://accounts.example.com/forgot" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtForgotPasswordLabel">Button label</label>
+                            <input id="txtForgotPasswordLabel" type="text" is="emby-input" placeholder="Forgot Password" />
+                        </div>
+                    </div>
+
+                    <div class="verticalSection verticalSection-extrabottompadding">
+                        <h2>Optional text</h2>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused" for="txtDisclaimerText">Text above buttons</label>
+                            <textarea id="txtDisclaimerText" is="emby-textarea" rows="3"></textarea>
+                            <div class="fieldDescription">
+                                Optional message shown above the buttons on the login page.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script type="text/javascript">
+            var LoginButtonsConfig = {
+                pluginUniqueId: 'b7e4d1a2-8c3f-4b6e-9d2a-1f0c5e8b6d3a'
+            };
+
+            function renderSyncStatus(config) {
+                var box = document.querySelector('#LoginButtonsConfigPage #syncStatusBox');
+                if (!box) {
+                    return;
+                }
+
+                var status = config.LastSyncStatus || '';
+                if (!status) {
+                    box.style.display = 'none';
+                    box.textContent = '';
+                    return;
+                }
+
+                box.style.display = 'block';
+                box.textContent = status;
+                box.style.color = status.indexOf('synced') >= 0 ? '#2e7d32' : '#c62828';
+            }
+
+            document.querySelector('#LoginButtonsConfigPage').addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
+
+                ApiClient.getPluginConfiguration(LoginButtonsConfig.pluginUniqueId).then(function (config) {
+                    document.querySelector('#LoginButtonsConfigPage #chkEnableSignUp').checked = !!config.EnableSignUpButton;
+                    document.querySelector('#LoginButtonsConfigPage #txtSignUpUrl').value = config.SignUpUrl || '';
+                    document.querySelector('#LoginButtonsConfigPage #txtSignUpLabel').value = config.SignUpLabel || 'Sign Up';
+                    document.querySelector('#LoginButtonsConfigPage #txtForgotPasswordUrl').value = config.ForgotPasswordUrl || '';
+                    document.querySelector('#LoginButtonsConfigPage #txtForgotPasswordLabel').value = config.ForgotPasswordLabel || 'Forgot Password';
+                    document.querySelector('#LoginButtonsConfigPage #txtDisclaimerText').value = config.DisclaimerText || '';
+                    renderSyncStatus(config);
+                    Dashboard.hideLoadingMsg();
+                });
+            });
+
+            document.querySelector('#LoginButtonsConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+
+                ApiClient.getPluginConfiguration(LoginButtonsConfig.pluginUniqueId).then(function (config) {
+                    config.EnableSignUpButton = document.querySelector('#LoginButtonsConfigPage #chkEnableSignUp').checked;
+                    config.SignUpUrl = document.querySelector('#LoginButtonsConfigPage #txtSignUpUrl').value.trim();
+                    config.SignUpLabel = document.querySelector('#LoginButtonsConfigPage #txtSignUpLabel').value.trim() || 'Sign Up';
+                    config.ForgotPasswordUrl = document.querySelector('#LoginButtonsConfigPage #txtForgotPasswordUrl').value.trim();
+                    config.ForgotPasswordLabel = document.querySelector('#LoginButtonsConfigPage #txtForgotPasswordLabel').value.trim() || 'Forgot Password';
+                    config.DisclaimerText = document.querySelector('#LoginButtonsConfigPage #txtDisclaimerText').value.trim();
+
+                    ApiClient.updatePluginConfiguration(LoginButtonsConfig.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                        return ApiClient.getPluginConfiguration(LoginButtonsConfig.pluginUniqueId);
+                    }).then(function (updatedConfig) {
+                        if (updatedConfig) {
+                            renderSyncStatus(updatedConfig);
+                        }
+                    });
+                });
+
+                return false;
+            });
+        </script>
+    </div>
+</body>
+</html>

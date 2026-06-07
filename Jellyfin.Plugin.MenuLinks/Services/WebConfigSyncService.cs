@@ -31,18 +31,57 @@ public class WebConfigSyncService
     }
 
     /// <summary>
+    /// Resolves candidate paths to the web client config.json file.
+    /// </summary>
+    /// <param name="customWebConfigPath">Optional override path.</param>
+    /// <returns>Unique candidate config.json paths in priority order.</returns>
+    public IReadOnlyList<string> GetCandidateConfigPaths(string? customWebConfigPath)
+    {
+        if (!string.IsNullOrWhiteSpace(customWebConfigPath))
+        {
+            return [customWebConfigPath.Trim()];
+        }
+
+        var candidates = new[]
+        {
+            Path.Combine(_applicationPaths.WebPath, "config.json"),
+            Path.Combine(_applicationPaths.ProgramDataPath, "wwwroot", "config.json"),
+            "/usr/share/jellyfin/web/config.json",
+            "/jellyfin/jellyfin-web/config.json"
+        };
+
+        return candidates
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+    }
+
+    /// <summary>
     /// Resolves the path to the web client config.json file.
     /// </summary>
     /// <param name="customWebConfigPath">Optional override path.</param>
     /// <returns>The resolved config.json path.</returns>
     public string ResolveConfigPath(string? customWebConfigPath)
     {
-        if (!string.IsNullOrWhiteSpace(customWebConfigPath))
+        var candidates = GetCandidateConfigPaths(customWebConfigPath);
+
+        foreach (var candidate in candidates)
         {
-            return customWebConfigPath.Trim();
+            if (File.Exists(candidate) && IsWritable(candidate))
+            {
+                return candidate;
+            }
         }
 
-        return Path.Combine(_applicationPaths.WebPath, "config.json");
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return candidates[0];
     }
 
     /// <summary>
@@ -50,34 +89,68 @@ public class WebConfigSyncService
     /// </summary>
     /// <param name="links">The menu links to write.</param>
     /// <param name="customWebConfigPath">Optional override path to config.json.</param>
-    /// <returns>True if the sync succeeded.</returns>
-    public bool SyncMenuLinks(MenuLink[] links, string? customWebConfigPath)
+    /// <returns>The sync result.</returns>
+    public SyncResult SyncMenuLinks(MenuLink[] links, string? customWebConfigPath)
     {
-        var configPath = ResolveConfigPath(customWebConfigPath);
+        var candidates = GetCandidateConfigPaths(customWebConfigPath);
+        var existingPaths = candidates.Where(File.Exists).ToArray();
 
-        try
+        if (existingPaths.Length == 0)
         {
-            if (!File.Exists(configPath))
+            var missingPath = candidates[0];
+            var missingMessage = $"config.json not found at {missingPath}. Set the custom path in Advanced settings if your install uses a non-default web location.";
+            _logger.LogError("Web config.json not found. Checked: {Paths}", string.Join(", ", candidates));
+            return new SyncResult
             {
-                _logger.LogError("Web config.json not found at {ConfigPath}", configPath);
-                return false;
+                Success = false,
+                ConfigPath = missingPath,
+                Message = missingMessage
+            };
+        }
+
+        foreach (var configPath in existingPaths)
+        {
+            if (!IsWritable(configPath))
+            {
+                _logger.LogWarning("Skipping non-writable config.json at {ConfigPath}", configPath);
+                continue;
             }
 
-            var jsonText = File.ReadAllText(configPath);
-            var root = JsonNode.Parse(jsonText)?.AsObject()
-                ?? throw new InvalidOperationException("config.json root must be a JSON object.");
+            try
+            {
+                var jsonText = File.ReadAllText(configPath);
+                var root = JsonNode.Parse(jsonText)?.AsObject()
+                    ?? throw new InvalidOperationException("config.json root must be a JSON object.");
 
-            root["menuLinks"] = BuildMenuLinksArray(links);
+                root["menuLinks"] = BuildMenuLinksArray(links);
 
-            File.WriteAllText(configPath, root.ToJsonString(JsonWriteOptions));
-            _logger.LogInformation("Synced {Count} menu link(s) to {ConfigPath}", links.Length, configPath);
-            return true;
+                File.WriteAllText(configPath, root.ToJsonString(JsonWriteOptions));
+                _logger.LogInformation("Synced {Count} menu link(s) to {ConfigPath}", links.Length, configPath);
+
+                return new SyncResult
+                {
+                    Success = true,
+                    ConfigPath = configPath,
+                    Message = $"Synced {links.Length} link(s) to {configPath}. Refresh the Jellyfin home page (not the Dashboard) to see them."
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to sync menu links to {ConfigPath}", configPath);
+            }
         }
-        catch (Exception ex)
+
+        var blockedPath = existingPaths[0];
+        var permissionMessage =
+            $"Could not write to {blockedPath}. The jellyfin user needs write permission on that file. " +
+            "On Ubuntu run: sudo chown jellyfin:jellyfin /usr/share/jellyfin/web/config.json";
+
+        return new SyncResult
         {
-            _logger.LogError(ex, "Failed to sync menu links to {ConfigPath}", configPath);
-            return false;
-        }
+            Success = false,
+            ConfigPath = blockedPath,
+            Message = permissionMessage
+        };
     }
 
     /// <summary>
@@ -133,6 +206,27 @@ public class WebConfigSyncService
         {
             _logger.LogError(ex, "Failed to read menu links from {ConfigPath}", configPath);
             return null;
+        }
+    }
+
+    private static bool IsWritable(string path)
+    {
+        try
+        {
+            using var stream = new FileStream(
+                path,
+                FileMode.Open,
+                FileAccess.ReadWrite,
+                FileShare.ReadWrite);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (IOException)
+        {
+            return false;
         }
     }
 

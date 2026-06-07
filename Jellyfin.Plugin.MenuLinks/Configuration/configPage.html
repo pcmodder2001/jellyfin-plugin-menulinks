@@ -10,9 +10,11 @@
                 <form id="MenuLinksConfigForm">
                     <p>
                         Add custom links to the Jellyfin Web side navigation menu.
-                        Links appear below Home and open in a new tab.
-                        After saving, refresh the web client to see changes.
+                        Links appear below <strong>Home</strong> on the regular Jellyfin home page
+                        (not in the admin Dashboard). After saving, hard-refresh that page (Ctrl+Shift+R).
                     </p>
+
+                    <div id="syncStatusBox" class="fieldDescription" style="display: none;"></div>
 
                     <div class="fieldDescription">
                         Icons use <a href="https://jossef.github.io/material-design-icons-iconfont/" target="_blank" rel="noopener">Material Design Icons</a>.
@@ -144,6 +146,24 @@
                 }
             }
 
+            function renderSyncStatus(config) {
+                var box = document.querySelector('#MenuLinksConfigPage #syncStatusBox');
+                if (!box) {
+                    return;
+                }
+
+                var status = config.LastSyncStatus || '';
+                if (!status) {
+                    box.style.display = 'none';
+                    box.textContent = '';
+                    return;
+                }
+
+                box.style.display = 'block';
+                box.textContent = status;
+                box.style.color = status.indexOf('Synced') === 0 ? '#2e7d32' : '#c62828';
+            }
+
             document.querySelector('#MenuLinksConfigPage').addEventListener('pageshow', function () {
                 Dashboard.showLoadingMsg();
 
@@ -158,6 +178,7 @@
                 ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
                     renderMenuLinks(config.MenuLinks || []);
                     document.querySelector('#MenuLinksConfigPage #txtCustomWebConfigPath').value = config.CustomWebConfigPath || '';
+                    renderSyncStatus(config);
                     Dashboard.hideLoadingMsg();
                 });
             });
@@ -172,6 +193,11 @@
 
                     ApiClient.updatePluginConfiguration(MenuLinksConfig.pluginUniqueId, config).then(function (result) {
                         Dashboard.processPluginConfigurationUpdateResult(result);
+                        return ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId);
+                    }).then(function (updatedConfig) {
+                        if (updatedConfig) {
+                            renderSyncStatus(updatedConfig);
+                        }
                     });
                 });
 
