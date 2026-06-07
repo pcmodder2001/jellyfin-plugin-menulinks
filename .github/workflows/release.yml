@@ -96,6 +96,11 @@ jobs:
           CHECKSUM="$(cat "dist/${ZIP_NAME}.md5")"
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
+          DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
+
+          # Use the latest manifest from main, not the stale copy from the tag checkout.
+          git fetch origin "${DEFAULT_BRANCH}"
+          git show "origin/${DEFAULT_BRANCH}:manifest.json" > manifest.json
 
           jq --arg version "${VERSION}" \
              --arg checksum "${CHECKSUM}" \
@@ -109,6 +114,8 @@ jobs:
                   [{version: $version, changelog: $changelog, targetAbi: "10.11.0.0", sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
                   + (.versions // [])
                   | unique_by(.version)
+                  | sort_by(.version)
+                  | reverse
                 )
               else .
               end

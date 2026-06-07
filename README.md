@@ -111,6 +111,19 @@ The workflow will:
 4. Click **Save** and confirm the third-party plugin warning
 5. Go to **Catalog**, find **Custom Menu Links**, and install
 
+### Catalog still shows an old version?
+
+Jellyfin caches plugin repository manifests. To force a refresh:
+
+1. **Dashboard → Plugins → Repositories**
+2. Delete the Custom Menu Links repository
+3. Re-add it with the same URL above
+4. Restart Jellyfin: `sudo systemctl restart jellyfin`
+
+Verify the live manifest in your browser — it should list **1.0.0.1** or newer:
+
+`https://raw.githubusercontent.com/pcmodder2001/jellyfin-plugin-menulinks/main/manifest.json`
+
 ### Local packaging (optional)
 
 To build a zip locally without GitHub Actions:
