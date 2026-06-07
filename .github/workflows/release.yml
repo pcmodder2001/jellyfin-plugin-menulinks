@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Plugin version (e.g. 1.0.0.0)"
+        description: "Plugin version (e.g. 1.0.0.3)"
         required: true
-        default: "1.0.0.0"
+        default: "1.0.0.3"
 
 permissions:
   contents: write
@@ -25,7 +25,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: |
+            8.0.x
+            9.0.x
 
       - name: Resolve version
         id: version
@@ -40,21 +42,28 @@ jobs:
           echo "tag=v${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Build
-        run: dotnet build Jellyfin.Plugin.MenuLinks.sln --configuration Release
+        run: |
+          dotnet build Jellyfin.Plugin.MenuLinks.sln --configuration Release -f net8.0
+          dotnet build Jellyfin.Plugin.MenuLinks.sln --configuration Release -f net9.0
 
-      - name: Package plugin zip
+      - name: Package plugin zips
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
-          PACKAGE_DIR="dist/custom-menu-links"
-          ZIP_NAME="custom-menu-links_${VERSION}.zip"
-
-          mkdir -p "${PACKAGE_DIR}"
-          cp Jellyfin.Plugin.MenuLinks/bin/Release/net9.0/Jellyfin.Plugin.MenuLinks.dll "${PACKAGE_DIR}/"
-
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          cat > "${PACKAGE_DIR}/meta.json" <<EOF
+          mkdir -p dist
+
+          package_abi() {
+            local ABI="$1"
+            local FRAMEWORK="$2"
+            local PACKAGE_DIR="dist/custom-menu-links-${ABI}"
+            local ZIP_NAME="custom-menu-links_${VERSION}_${ABI}.zip"
+
+            mkdir -p "${PACKAGE_DIR}"
+            cp "Jellyfin.Plugin.MenuLinks/bin/Release/${FRAMEWORK}/Jellyfin.Plugin.MenuLinks.dll" "${PACKAGE_DIR}/"
+
+            cat > "${PACKAGE_DIR}/meta.json" <<EOF
           {
             "guid": "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f",
             "name": "Custom Menu Links",
@@ -63,7 +72,7 @@ jobs:
             "owner": "pcmodder2001",
             "category": "General",
             "version": "${VERSION}",
-            "targetAbi": "10.11.0.0",
+            "targetAbi": "${ABI}.0.0",
             "changelog": "Release ${VERSION}",
             "timestamp": "${TIMESTAMP}",
             "status": "Active",
@@ -72,9 +81,12 @@ jobs:
           }
           EOF
 
-          mkdir -p dist
-          (cd "${PACKAGE_DIR}" && zip -r "../${ZIP_NAME}" .)
-          md5sum "dist/${ZIP_NAME}" | awk '{print $1}' > "dist/${ZIP_NAME}.md5"
+            (cd "${PACKAGE_DIR}" && zip -r "../${ZIP_NAME}" .)
+            md5sum "dist/${ZIP_NAME}" | awk '{print $1}' > "dist/${ZIP_NAME}.md5"
+          }
+
+          package_abi "10.10" "net8.0"
+          package_abi "10.11" "net9.0"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -82,8 +94,10 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Custom Menu Links ${{ steps.version.outputs.version }}
           files: |
-            dist/custom-menu-links_${{ steps.version.outputs.version }}.zip
-            dist/custom-menu-links_${{ steps.version.outputs.version }}.zip.md5
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip.md5
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip.md5
           generate_release_notes: true
 
       - name: Update manifest.json
@@ -92,36 +106,43 @@ jobs:
           set -euo pipefail
           VERSION="${{ steps.version.outputs.version }}"
           TAG="${{ steps.version.outputs.tag }}"
-          ZIP_NAME="custom-menu-links_${VERSION}.zip"
-          CHECKSUM="$(cat "dist/${ZIP_NAME}.md5")"
           TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
           DEFAULT_BRANCH="${{ github.event.repository.default_branch }}"
 
-          # Use the latest manifest from main, not the stale copy from the tag checkout.
           git fetch origin "${DEFAULT_BRANCH}"
           git show "origin/${DEFAULT_BRANCH}:manifest.json" > manifest.json
 
-          jq --arg version "${VERSION}" \
-             --arg checksum "${CHECKSUM}" \
-             --arg sourceUrl "${SOURCE_URL}" \
-             --arg timestamp "${TIMESTAMP}" \
-             --arg changelog "Release ${VERSION}" \
-             '
-            map(
-              if .guid == "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" then
-                .versions = (
-                  [{version: $version, changelog: $changelog, targetAbi: "10.11.0.0", sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
-                  + (.versions // [])
-                  | unique_by(.version)
-                  | sort_by(.version)
-                  | reverse
-                )
-              else .
-              end
-            )
-            ' manifest.json > manifest.tmp
-          mv manifest.tmp manifest.json
+          add_manifest_entry() {
+            local ABI="$1"
+            local ZIP_NAME="custom-menu-links_${VERSION}_${ABI}.zip"
+            local CHECKSUM="$(cat "dist/${ZIP_NAME}.md5")"
+            local SOURCE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ZIP_NAME}"
+
+            jq --arg version "${VERSION}" \
+               --arg checksum "${CHECKSUM}" \
+               --arg sourceUrl "${SOURCE_URL}" \
+               --arg timestamp "${TIMESTAMP}" \
+               --arg targetAbi "${ABI}.0.0" \
+               --arg changelog "Release ${VERSION} for Jellyfin ${ABI}" \
+               '
+              map(
+                if .guid == "a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f" then
+                  .versions = (
+                    [{version: $version, changelog: $changelog, targetAbi: $targetAbi, sourceUrl: $sourceUrl, checksum: $checksum, timestamp: $timestamp}]
+                    + (.versions // [])
+                    | unique_by(.version + "|" + .targetAbi)
+                    | sort_by(.version, .targetAbi)
+                    | reverse
+                  )
+                else .
+                end
+              )
+              ' manifest.json > manifest.tmp
+            mv manifest.tmp manifest.json
+          }
+
+          add_manifest_entry "10.10"
+          add_manifest_entry "10.11"
 
       - name: Commit updated manifest
         shell: bash

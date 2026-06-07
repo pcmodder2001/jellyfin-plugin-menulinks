@@ -20,8 +20,16 @@ Each link has:
 
 ## Requirements
 
-- Jellyfin Server **10.11+** (.NET 9)
+- Jellyfin Server **10.10+** (10.10 uses .NET 8, 10.11+ uses .NET 9)
 - Jellyfin Web **10.8+** (for `menuLinks` support)
+
+Check your Jellyfin version on Ubuntu:
+
+```bash
+dpkg -l jellyfin 2>/dev/null | grep jellyfin || jellyfin --version
+```
+
+If the plugin shows **NotSupported**, the installed build was compiled against the wrong Jellyfin SDK version. Install **v1.0.0.3** or later (built against Jellyfin 10.11 packages for servers like **10.11.5**).
 
 ## Build
 
