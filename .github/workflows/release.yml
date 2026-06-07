@@ -120,22 +120,6 @@ jobs:
               "${FRAMEWORK}"
           done
 
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: Jellyfin Plugins ${{ steps.version.outputs.version }}
-          files: |
-            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip
-            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip.md5
-            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip
-            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip.md5
-            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip
-            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip.md5
-            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip
-            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip.md5
-          generate_release_notes: true
-
       - name: Update manifest.json
         shell: bash
         run: |
@@ -194,6 +178,23 @@ jobs:
               "${ABI}" \
               "Release ${VERSION} for Jellyfin ${ABI}"
           done
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Jellyfin Plugins ${{ steps.version.outputs.version }}
+          files: |
+            manifest.json
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.10.zip.md5
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip
+            dist/custom-menu-links_${{ steps.version.outputs.version }}_10.11.zip.md5
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip.md5
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip
+            dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip.md5
+          generate_release_notes: true
 
       - name: Commit updated manifest
         shell: bash

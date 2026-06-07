@@ -255,13 +255,17 @@ The workflow will:
 1. Open **Dashboard → Plugins → Repositories**
 2. Click **+**
 3. Enter:
-   - **Name:** `Custom Menu Links`
-   - **URL:** `https://cdn.jsdelivr.net/gh/pcmodder2001/jellyfin-plugin-menulinks@main/manifest.json`
+   - **Name:** `Jellyfin Custom Web Plugins`
+   - **URL:** `https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/latest/download/manifest.json`
 4. Click **Save** and confirm the third-party plugin warning
 
-**Never use** `https://raw.githubusercontent.com/.../manifest.json` — GitHub's raw CDN often lags behind the file you see on github.com, so Jellyfin may not see the latest version or installs fail with a checksum error.
+**Use the GitHub Releases URL above** — it always points at the latest manifest and avoids CDN cache issues with `raw.githubusercontent.com` and jsDelivr `@main`.
 
-**If Jellyfin still shows an old version:** remove the repository entry, re-add it with the jsDelivr URL above, then open **Plugins → Catalog** again. Restart Jellyfin if the catalog still looks stale.
+Do **not** use:
+- `https://raw.githubusercontent.com/.../manifest.json` (often stale)
+- `https://cdn.jsdelivr.net/gh/.../manifest.json` (can cache old `@main` for hours at your CDN edge)
+
+**If Jellyfin still shows an old version:** remove the repository entry, re-add it with the releases URL above, restart Jellyfin, then open **Plugins → Catalog** again.
 
 ### Install and update from the dashboard
 

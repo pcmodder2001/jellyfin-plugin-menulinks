@@ -1,0 +1,35 @@
+name: Upload Manifest to Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - manifest.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload manifest to latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          LATEST_TAG="$(gh release list --limit 1 --json tagName --jq '.[0].tagName')"
+          echo "Uploading manifest.json to ${LATEST_TAG}"
+          gh release upload "${LATEST_TAG}" manifest.json --clobber
+
+      - name: Purge jsDelivr cache
+        shell: bash
+        run: |
+          curl -fsS -X GET "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/manifest.json" || true
