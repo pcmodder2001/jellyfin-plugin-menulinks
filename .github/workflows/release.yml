@@ -167,3 +167,8 @@ jobs:
 
           git commit -m "chore(repo): update manifest for ${{ steps.version.outputs.version }}"
           git push origin "${DEFAULT_BRANCH}"
+
+      - name: Purge jsDelivr cache
+        shell: bash
+        run: |
+          curl -fsS -X GET "https://purge.jsdelivr.net/gh/${GITHUB_REPOSITORY}@main/manifest.json" || true

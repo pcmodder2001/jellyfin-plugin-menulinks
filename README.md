@@ -133,10 +133,12 @@ The workflow will:
 2. Click **+**
 3. Enter:
    - **Name:** `Custom Menu Links`
-   - **URL:** `https://cdn.jsdelivr.net/gh/pcmodder2001/jellyfin-plugin-menulinks@main/manifest.json`
+   - **URL:** `https://pcmodder2001.github.io/jellyfin-plugin-menulinks/manifest.json`
 4. Click **Save** and confirm the third-party plugin warning
 
-Use the jsDelivr URL above instead of `raw.githubusercontent.com` — GitHub's raw CDN can cache an old manifest for a while after updates.
+**Do not use** `raw.githubusercontent.com` — it often shows old versions for hours after an update.
+
+**One-time GitHub setup (repo owner only):** In your repo go to **Settings → Pages → Build and deployment → Source: GitHub Actions**. The manifest is published automatically when `manifest.json` changes.
 
 ### Install and update from the dashboard
 
