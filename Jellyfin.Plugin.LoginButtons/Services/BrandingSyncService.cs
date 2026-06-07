@@ -127,14 +127,14 @@ public partial class BrandingSyncService
 
         if (configuration.EnableSignUpButton && IsValidHttpUrl(configuration.SignUpUrl))
         {
-            builder.AppendLine(BuildLink(
+            builder.AppendLine(BuildPrimaryLink(
                 configuration.SignUpUrl.Trim(),
                 string.IsNullOrWhiteSpace(configuration.SignUpLabel) ? "Sign Up" : configuration.SignUpLabel.Trim()));
         }
 
         if (IsValidHttpUrl(configuration.ForgotPasswordUrl))
         {
-            builder.AppendLine(BuildLink(
+            builder.AppendLine(BuildSecondaryLink(
                 configuration.ForgotPasswordUrl.Trim(),
                 string.IsNullOrWhiteSpace(configuration.ForgotPasswordLabel) ? "Forgot Password" : configuration.ForgotPasswordLabel.Trim()));
         }
@@ -142,9 +142,19 @@ public partial class BrandingSyncService
         return builder.ToString().Trim();
     }
 
+    internal static string BuildPrimaryLink(string url, string label)
+    {
+        return $"<a href=\"{WebUtility.HtmlEncode(url)}\" class=\"raised block emby-button jellyfinPluginLoginBtn jellyfinPluginBtnSignUp\"><span>{WebUtility.HtmlEncode(label)}</span></a>";
+    }
+
+    internal static string BuildSecondaryLink(string url, string label)
+    {
+        return $"<a href=\"{WebUtility.HtmlEncode(url)}\" class=\"raised cancel block emby-button jellyfinPluginLoginBtn jellyfinPluginBtnForgot\"><span>{WebUtility.HtmlEncode(label)}</span></a>";
+    }
+
     internal static string BuildLink(string url, string label)
     {
-        return $"<a href=\"{WebUtility.HtmlEncode(url)}\">{WebUtility.HtmlEncode(label)}</a>";
+        return BuildSecondaryLink(url, label);
     }
 
     internal static string BuildPluginCss(PluginConfiguration configuration)
@@ -162,21 +172,53 @@ public partial class BrandingSyncService
             builder.AppendLine("#loginPage .btnForgotPassword { display: none !important; }");
         }
 
-        builder.AppendLine("#loginPage .loginDisclaimer .loginButtonsPlugin {");
-        builder.AppendLine("  display: flex;");
-        builder.AppendLine("  flex-direction: column;");
-        builder.AppendLine("  gap: 0.5em;");
-        builder.AppendLine("  margin-top: 0.75em;");
-        builder.AppendLine("  width: 100%;");
-        builder.AppendLine("}");
-        builder.AppendLine("#loginPage .loginDisclaimer .loginButtonsPlugin a {");
-        builder.AppendLine("  display: block;");
-        builder.AppendLine("  width: 100%;");
-        builder.AppendLine("  text-align: center;");
-        builder.AppendLine("  box-sizing: border-box;");
-        builder.AppendLine("}");
+        builder.AppendLine(GetNativeLoginButtonCss());
 
         return builder.ToString().Trim();
+    }
+
+    internal static string GetNativeLoginButtonCss()
+    {
+        return """
+            #loginPage .readOnlyContent {
+              display: flex;
+              flex-direction: column;
+            }
+
+            #loginPage .readOnlyContent > .btnManual { order: 10; }
+            #loginPage .readOnlyContent > .btnQuick { order: 20; }
+            #loginPage .readOnlyContent > .btnForgotPassword { order: 30; }
+            #loginPage .readOnlyContent > .btnSelectServer { order: 50; }
+            #loginPage .readOnlyContent > .loginDisclaimerContainer {
+              order: 40;
+              display: contents;
+              margin-top: 0;
+            }
+
+            #loginPage .loginDisclaimer {
+              display: contents;
+            }
+
+            #loginPage .loginDisclaimer .loginButtonsPlugin,
+            #loginPage .loginDisclaimer .accountPortalPlugin {
+              display: contents;
+            }
+
+            #loginPage .loginDisclaimer a.jellyfinPluginLoginBtn {
+              display: block;
+              width: 100%;
+              margin-left: auto;
+              margin-right: auto;
+              margin-bottom: 1em;
+              text-decoration: none;
+              color: inherit !important;
+              box-sizing: border-box;
+              text-align: center;
+            }
+
+            #loginPage a.jellyfinPluginBtnSignUp { order: 25; }
+            #loginPage a.jellyfinPluginBtnForgot { order: 30; }
+            """;
     }
 
     internal static string MergePluginCss(string? existingCss, string pluginCss)

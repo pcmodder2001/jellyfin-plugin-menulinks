@@ -1,7 +1,7 @@
 ---
 name: "Account Portal"
 guid: "c9e6f3c4-8d5b-4a2f-9e0c-3b1a7d8e5f2b"
-version: "1.0.0.8"
+version: "1.0.0.9"
 targetAbi: "10.10.0.0"
 framework: "net8.0"
 overview: "Open signup and email password reset for Jellyfin"
