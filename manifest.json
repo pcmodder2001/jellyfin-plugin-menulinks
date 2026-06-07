@@ -6,6 +6,15 @@
     "description": "Provides a simple dashboard UI for adding, editing, and reordering custom side menu links in Jellyfin Web. Changes are written to the web client config.json automatically.",
     "owner": "pcmodder2001",
     "category": "General",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "Release 1.0.0.0",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.0/custom-menu-links_1.0.0.0.zip",
+        "checksum": "44bc0917f93e1f1e90b3c1cfc4812cfe",
+        "timestamp": "2026-06-07T13:30:01Z"
+      }
+    ]
   }
 ]
