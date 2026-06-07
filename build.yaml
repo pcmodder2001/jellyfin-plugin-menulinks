@@ -10,7 +10,7 @@ description: >
   side menu links in Jellyfin Web. Changes are written to the web client
   config.json automatically.
 category: "General"
-owner: "bradl"
+owner: "pcmodder2001"
 artifacts:
   - "Jellyfin.Plugin.MenuLinks.dll"
 changelog: >

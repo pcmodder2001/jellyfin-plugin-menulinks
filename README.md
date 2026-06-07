@@ -67,11 +67,9 @@ git init
 git add .
 git commit -m "Initial commit"
 git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/jellyfin-plugin-menulinks.git
+git remote add origin https://github.com/pcmodder2001/jellyfin-plugin-menulinks.git
 git push -u origin main
 ```
-
-Replace `YOUR_USERNAME` with your GitHub username (and change the repo name if you prefer).
 
 ### 2. Publish a release
 
@@ -96,7 +94,7 @@ The workflow will:
 2. Click **+**
 3. Enter:
    - **Name:** `Custom Menu Links` (or any name you like)
-   - **URL:** `https://raw.githubusercontent.com/YOUR_USERNAME/jellyfin-plugin-menulinks/main/manifest.json`
+   - **URL:** `https://raw.githubusercontent.com/pcmodder2001/jellyfin-plugin-menulinks/main/manifest.json`
 4. Click **Save** and confirm the third-party plugin warning
 5. Go to **Catalog**, find **Custom Menu Links**, and install
 

@@ -60,7 +60,7 @@ jobs:
             "name": "Custom Menu Links",
             "overview": "Manage custom Jellyfin Web side menu links from the dashboard",
             "description": "Provides a simple dashboard UI for adding, editing, and reordering custom side menu links in Jellyfin Web. Changes are written to the web client config.json automatically.",
-            "owner": "bradl",
+            "owner": "pcmodder2001",
             "category": "General",
             "version": "${VERSION}",
             "targetAbi": "10.11.0.0",
