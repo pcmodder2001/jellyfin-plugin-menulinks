@@ -109,28 +109,26 @@ The workflow will:
 - Create a GitHub Release with the zip + MD5 checksum
 - Update `manifest.json` in your repo
 
-### 3. Add the repository in Jellyfin
+### 3. Add the repository in Jellyfin (one-time setup)
 
 1. Open **Dashboard → Plugins → Repositories**
 2. Click **+**
 3. Enter:
-   - **Name:** `Custom Menu Links` (or any name you like)
+   - **Name:** `Custom Menu Links`
    - **URL:** `https://raw.githubusercontent.com/pcmodder2001/jellyfin-plugin-menulinks/main/manifest.json`
 4. Click **Save** and confirm the third-party plugin warning
-5. Go to **Catalog**, find **Custom Menu Links**, and install
 
-### Catalog still shows an old version?
+### Install and update from the dashboard
 
-Jellyfin caches plugin repository manifests. To force a refresh:
+Once the repository is added, Jellyfin handles everything from the UI:
 
-1. **Dashboard → Plugins → Repositories**
-2. Delete the Custom Menu Links repository
-3. Re-add it with the same URL above
-4. Restart Jellyfin: `sudo systemctl restart jellyfin`
+1. **Install:** **Dashboard → Plugins → Catalog** → find **Custom Menu Links** → **Install**
+2. **Update:** **Dashboard → Plugins → Installed** → select the plugin → **Update** (when a newer version is in the manifest)
+3. **Auto-update (optional):** **Dashboard → Plugins → Installed** → enable auto-update on the plugin, or turn on automatic plugin updates in server settings
 
-Verify the live manifest in your browser — it should list **1.0.0.1** or newer:
+Jellyfin checks your configured repositories for new versions automatically. When a new release is published to GitHub, you should see an update available in **Installed** without doing anything manually.
 
-`https://raw.githubusercontent.com/pcmodder2001/jellyfin-plugin-menulinks/main/manifest.json`
+If you have a broken install showing **NotSupported**, uninstall it from **Installed** first, then install again from **Catalog**.
 
 ### Local packaging (optional)
 
