@@ -34,5 +34,14 @@
         "timestamp": "2026-06-07T18:42:20Z"
       }
     ]
+  },
+  {
+    "guid": "c9e6f3c4-8d5b-4a2f-9e0c-3b1a7d8e5f2b",
+    "name": "Account Portal",
+    "overview": "Open signup and email password reset for Jellyfin",
+    "description": "Enable self-service account registration with auto-enabled users and email-based password reset links on the login page.",
+    "owner": "pcmodder2001",
+    "category": "General",
+    "versions": []
   }
 ]

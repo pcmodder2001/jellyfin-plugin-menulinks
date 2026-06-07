@@ -9,7 +9,7 @@ on:
       version:
         description: "Plugin version (e.g. 1.0.0.6)"
         required: true
-        default: "1.0.0.6"
+        default: "1.0.0.8"
 
 permissions:
   contents: write
@@ -118,6 +118,17 @@ jobs:
               "Jellyfin.Plugin.LoginButtons.dll" \
               "${ABI}" \
               "${FRAMEWORK}"
+
+            package_plugin \
+              "account-portal" \
+              "c9e6f3c4-8d5b-4a2f-9e0c-3b1a7d8e5f2b" \
+              "Account Portal" \
+              "Open signup and email password reset for Jellyfin" \
+              "Enable self-service account registration with auto-enabled users and email-based password reset links on the login page." \
+              "Jellyfin.Plugin.AccountPortal" \
+              "Jellyfin.Plugin.AccountPortal.dll" \
+              "${ABI}" \
+              "${FRAMEWORK}"
           done
 
       - name: Update manifest.json
@@ -171,6 +182,12 @@ jobs:
             "10.11" \
             "Release ${VERSION} for Jellyfin 10.11"
 
+          add_manifest_entry \
+            "c9e6f3c4-8d5b-4a2f-9e0c-3b1a7d8e5f2b" \
+            "account-portal" \
+            "10.11" \
+            "Release ${VERSION} for Jellyfin 10.11"
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -186,6 +203,10 @@ jobs:
             dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.10.zip.md5
             dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip
             dist/custom-login-buttons_${{ steps.version.outputs.version }}_10.11.zip.md5
+            dist/account-portal_${{ steps.version.outputs.version }}_10.10.zip
+            dist/account-portal_${{ steps.version.outputs.version }}_10.10.zip.md5
+            dist/account-portal_${{ steps.version.outputs.version }}_10.11.zip
+            dist/account-portal_${{ steps.version.outputs.version }}_10.11.zip.md5
           generate_release_notes: true
 
       - name: Commit updated manifest

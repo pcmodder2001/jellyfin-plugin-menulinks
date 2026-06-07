@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reset password</title>
+    <style>
+        :root { color-scheme: dark; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Segoe UI, system-ui, sans-serif;
+            background: #101010;
+            color: #fff;
+        }
+        .card {
+            width: min(420px, calc(100vw - 2rem));
+            background: #202020;
+            border-radius: 0.35em;
+            padding: 1.5rem;
+            box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+        }
+        h1 { margin: 0 0 0.25rem; font-size: 1.5rem; }
+        p { margin: 0 0 1rem; color: #bbb; }
+        label { display: block; margin: 0.75rem 0 0.25rem; font-size: 0.9rem; }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid #444;
+            border-radius: 0.25em;
+            background: #181818;
+            color: #fff;
+        }
+        button {
+            margin-top: 1.25rem;
+            width: 100%;
+            padding: 0.75rem;
+            border: 0;
+            border-radius: 0.25em;
+            background: #00a4dc;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        button:disabled { opacity: 0.6; cursor: default; }
+        .message { margin-top: 1rem; min-height: 1.25rem; }
+        .message.error { color: #ff867c; }
+        .message.success { color: #81c784; }
+        .links { margin-top: 1rem; text-align: center; }
+        a { color: #00a4dc; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Reset password</h1>
+        <p>Choose a new password for your account.</p>
+        <form id="resetForm">
+            <label for="password">New password</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" required />
+
+            <label for="confirmPassword">Confirm password</label>
+            <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required />
+
+            <button type="submit" id="submitBtn">Update password</button>
+        </form>
+        <div id="message" class="message" role="status"></div>
+        <div class="links">
+            <a href="/web/index.html#!/login.html">Back to sign in</a>
+        </div>
+    </div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token') || '';
+        const form = document.getElementById('resetForm');
+        const message = document.getElementById('message');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (!token) {
+            message.textContent = 'Reset link is invalid or expired.';
+            message.className = 'message error';
+            submitBtn.disabled = true;
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            message.textContent = '';
+            message.className = 'message';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/AccountPortal/Public/ResetPassword', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        Token: token,
+                        Password: document.getElementById('password').value,
+                        ConfirmPassword: document.getElementById('confirmPassword').value
+                    })
+                });
+
+                const result = await response.json();
+                message.textContent = result.message || result.Message || 'Request failed.';
+                message.className = 'message ' + (result.success || result.Success ? 'success' : 'error');
+
+                if (result.success || result.Success) {
+                    form.reset();
+                }
+            } catch (error) {
+                message.textContent = 'Could not submit the form.';
+                message.className = 'message error';
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

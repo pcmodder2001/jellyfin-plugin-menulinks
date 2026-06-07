@@ -1,11 +1,12 @@
 # Jellyfin Custom Web Plugins
 
-Two Jellyfin server plugins in one repository — install both from the same plugin catalog URL.
+Three Jellyfin server plugins in one repository — install all from the same plugin catalog URL.
 
 | Plugin | What it does |
 |--------|----------------|
 | **Custom Menu Links** | Manage custom side menu links in Jellyfin Web (writes `config.json`) |
 | **Custom Login Buttons** | Add a sign-up button and custom forgot-password link on the login page |
+| **Account Portal** | Built-in open sign-up, auto-enabled accounts, and email password reset |
 
 ---
 
@@ -57,6 +58,45 @@ After saving, hard-refresh the **login page** (Ctrl+Shift+R).
 
 ---
 
+## Account Portal
+
+Self-service account management without jfa-go or external sites.
+
+### What it does
+
+- **Open sign up** — toggle on/off in plugin settings; anyone can create an account from the login page
+- **Auto-enable** — new accounts are created active (not disabled or hidden)
+- **Email password reset** — users receive a reset link by email instead of Jellyfin's PIN-on-server flow
+
+Configure under **Dashboard → Account Portal**:
+
+| Setting | Description |
+|---------|-------------|
+| Enable open sign up | Shows a Sign Up button and `/AccountPortal/Signup` registration page |
+| Enable email password reset | Replaces Jellyfin's forgot-password button with email reset links |
+| Public server URL | Base URL in reset emails (e.g. `https://jellyfin.example.com`) |
+| SMTP settings | Host, port, credentials, and from address for outbound mail |
+| Minimum password length | Enforced on sign-up and reset |
+
+After saving, hard-refresh the **login page** (Ctrl+Shift+R).
+
+### Important notes
+
+- **Do not run Account Portal and Custom Login Buttons for the same buttons** — disable sign-up / forgot-password in Login Buttons if you use Account Portal.
+- **Email is stored by this plugin** — Jellyfin has no built-in user email field. Password reset only works for accounts that registered an email through Account Portal (or that you add manually to the plugin data file).
+- **Open signup has no captcha or admin approval** — only enable it if you accept that risk on your server.
+- Existing admin-created users can reset passwords only after an email is associated (re-register is not an option; an admin would need to set a password manually).
+
+### Public pages
+
+| URL | Purpose |
+|-----|---------|
+| `/AccountPortal/Signup` | Create account |
+| `/AccountPortal/ForgotPassword` | Request reset email |
+| `/AccountPortal/Reset?token=…` | Set new password from email link |
+
+---
+
 ## Requirements
 
 - Jellyfin Server **10.10+** (10.10 uses .NET 8, 10.11+ uses .NET 9)
@@ -81,6 +121,7 @@ Output DLLs:
 ```
 Jellyfin.Plugin.MenuLinks/bin/Release/net9.0/Jellyfin.Plugin.MenuLinks.dll
 Jellyfin.Plugin.LoginButtons/bin/Release/net9.0/Jellyfin.Plugin.LoginButtons.dll
+Jellyfin.Plugin.AccountPortal/bin/Release/net9.0/Jellyfin.Plugin.AccountPortal.dll
 ```
 
 ## Install
@@ -193,7 +234,20 @@ sudo systemctl stop jellyfin
 sudo ls /var/lib/jellyfin/plugins/
 sudo rm -rf "/var/lib/jellyfin/plugins/Custom Menu Links"*
 sudo rm -rf "/var/lib/jellyfin/plugins/Custom Login Buttons"*
+sudo rm -rf "/var/lib/jellyfin/plugins/Account Portal"*
 sudo chown -R jellyfin:jellyfin /var/lib/jellyfin/plugins
+sudo systemctl start jellyfin
+```
+
+**Manual install — Account Portal (10.11):**
+
+```bash
+sudo systemctl stop jellyfin
+sudo mkdir -p "/var/lib/jellyfin/plugins/Account Portal"
+cd /tmp
+curl -fL -o plugin.zip "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.8/account-portal_1.0.0.8_10.11.zip"
+sudo unzip -o plugin.zip -d "/var/lib/jellyfin/plugins/Account Portal"
+sudo chown -R jellyfin:jellyfin "/var/lib/jellyfin/plugins/Account Portal"
 sudo systemctl start jellyfin
 ```
 
@@ -315,4 +369,3 @@ This project follows the standard [Jellyfin plugin template](https://github.com/
 - `Configuration/configPage.html` — dashboard UI (embedded resource)
 - `manifest.json` — plugin repository manifest for Jellyfin's catalog
 - `.github/workflows/release.yml` — automated release + manifest updates
-"# jellyfin-plugin-menulinks" 
