@@ -42,11 +42,14 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         yield return new PluginPageInfo
         {
-            Name = Name,
+            Name = "menulinks",
+            DisplayName = Name,
             EmbeddedResourcePath = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}.Configuration.configPage.html",
-                GetType().Namespace)
+                GetType().Namespace),
+            EnableInMainMenu = true,
+            MenuIcon = "link"
         };
     }
 }

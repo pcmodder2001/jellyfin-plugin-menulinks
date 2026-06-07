@@ -58,11 +58,29 @@ Some Docker images mount `config.json` from a custom location. If the plugin can
 
 ## Usage
 
-1. Add your links in the plugin settings page
-2. Click **Save**
-3. Refresh the Jellyfin Web client (hard refresh if needed)
+The settings page is in the **admin Dashboard** (not the regular Jellyfin home screen).
 
-Links appear in the side menu below **Home**.
+### Open the settings page
+
+**Option A — Dashboard sidebar (v1.0.0.4+)**
+
+1. Open the **Dashboard** (wrench icon, admin account required)
+2. Look in the left sidebar for **Custom Menu Links**
+3. Click it to open the settings page
+
+**Option B — Installed plugins list**
+
+1. **Dashboard → Plugins → Installed**
+2. Click **Custom Menu Links**
+3. Open the configuration / settings section on that page
+
+### Add your links
+
+1. Click **Add Link** and fill in **Name**, **URL**, and optional **Icon**
+2. Click **Save**
+3. Refresh the Jellyfin Web client (Ctrl+Shift+R)
+
+Your custom links then appear in the **regular Jellyfin side menu** below **Home** (not in the Dashboard).
 
 ## Server won't start after installing?
 
