@@ -22,7 +22,9 @@
                     <div class="verticalSection verticalSection-extrabottompadding">
                         <h2>Menu Links</h2>
                         <div id="menuLinksList"></div>
-                        <button type="button" id="btnAddLink" class="button-link">Add Link</button>
+                        <button type="button" is="emby-button" id="btnAddLink" class="raised emby-button">
+                            <span>Add Link</span>
+                        </button>
                     </div>
 
                     <div class="verticalSection verticalSection-extrabottompadding">
@@ -43,129 +45,139 @@
                         </button>
                     </div>
                 </form>
+
+                <div id="menuLinkRowTemplate" class="menuLinkRowTemplate" style="display: none;">
+                    <div class="menuLinkRow verticalSection verticalSection-extrabottompadding">
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Name</label>
+                            <input class="menuLinkName" type="text" is="emby-input" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">URL</label>
+                            <input class="menuLinkUrl" type="text" is="emby-input" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Icon (optional)</label>
+                            <input class="menuLinkIcon" type="text" is="emby-input" placeholder="link" />
+                        </div>
+                        <div class="flex align-items-center">
+                            <button type="button" class="btnMoveUp raised emby-button">Move Up</button>
+                            <button type="button" class="btnMoveDown raised emby-button">Move Down</button>
+                            <button type="button" class="btnRemove raised emby-button button-delete">Remove</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <template id="menuLinkRowTemplate">
-        <div class="menuLinkRow verticalSection verticalSection-extrabottompadding">
-            <div class="inputContainer">
-                <label class="inputLabel inputLabelUnfocused menuLinkNameLabel">Name</label>
-                <input class="menuLinkName" type="text" is="emby-input" required />
-            </div>
-            <div class="inputContainer">
-                <label class="inputLabel inputLabelUnfocused menuLinkUrlLabel">URL</label>
-                <input class="menuLinkUrl" type="url" is="emby-input" required />
-            </div>
-            <div class="inputContainer">
-                <label class="inputLabel inputLabelUnfocused menuLinkIconLabel">Icon (optional)</label>
-                <input class="menuLinkIcon" type="text" is="emby-input" placeholder="link" />
-            </div>
-            <div class="flex align-items-center">
-                <button type="button" class="btnMoveUp raised emby-button">Move Up</button>
-                <button type="button" class="btnMoveDown raised emby-button">Move Down</button>
-                <button type="button" class="btnRemove raised emby-button button-delete">Remove</button>
-            </div>
-        </div>
-    </template>
+        <script type="text/javascript">
+            var MenuLinksConfig = {
+                pluginUniqueId: 'a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f'
+            };
 
-    <script type="text/javascript">
-        var MenuLinksConfig = {
-            pluginUniqueId: 'a3f8c2e1-7b4d-4a9e-8f1c-2d6e9a0b4c5f'
-        };
+            function getMenuLinksFromDom() {
+                var rows = document.querySelectorAll('#MenuLinksConfigPage #menuLinksList .menuLinkRow');
+                var links = [];
 
-        function getMenuLinksFromDom() {
-            var rows = document.querySelectorAll('#menuLinksList .menuLinkRow');
-            var links = [];
+                rows.forEach(function (row) {
+                    var name = row.querySelector('.menuLinkName').value.trim();
+                    var url = row.querySelector('.menuLinkUrl').value.trim();
+                    var icon = row.querySelector('.menuLinkIcon').value.trim();
 
-            rows.forEach(function (row) {
-                var name = row.querySelector('.menuLinkName').value.trim();
-                var url = row.querySelector('.menuLinkUrl').value.trim();
-                var icon = row.querySelector('.menuLinkIcon').value.trim();
+                    if (!name && !url) {
+                        return;
+                    }
 
-                if (!name && !url) {
+                    links.push({
+                        Name: name,
+                        Url: url,
+                        Icon: icon || null
+                    });
+                });
+
+                return links;
+            }
+
+            function bindMenuLinkRowEvents(row) {
+                row.querySelector('.btnRemove').addEventListener('click', function () {
+                    row.remove();
+                });
+
+                row.querySelector('.btnMoveUp').addEventListener('click', function () {
+                    var previous = row.previousElementSibling;
+                    if (previous) {
+                        row.parentNode.insertBefore(row, previous);
+                    }
+                });
+
+                row.querySelector('.btnMoveDown').addEventListener('click', function () {
+                    var next = row.nextElementSibling;
+                    if (next) {
+                        row.parentNode.insertBefore(next, row);
+                    }
+                });
+            }
+
+            function addMenuLinkRow(link) {
+                var templateRow = document.querySelector('#MenuLinksConfigPage .menuLinkRowTemplate .menuLinkRow');
+                if (!templateRow) {
                     return;
                 }
 
-                links.push({
-                    Name: name,
-                    Url: url,
-                    Icon: icon || null
-                });
-            });
+                var row = templateRow.cloneNode(true);
+                row.querySelector('.menuLinkName').value = link && link.Name ? link.Name : '';
+                row.querySelector('.menuLinkUrl').value = link && link.Url ? link.Url : '';
+                row.querySelector('.menuLinkIcon').value = link && link.Icon ? link.Icon : '';
 
-            return links;
-        }
-
-        function addMenuLinkRow(link) {
-            var template = document.querySelector('#menuLinkRowTemplate');
-            var row = template.content.firstElementChild.cloneNode(true);
-
-            row.querySelector('.menuLinkName').value = link && link.Name ? link.Name : '';
-            row.querySelector('.menuLinkUrl').value = link && link.Url ? link.Url : '';
-            row.querySelector('.menuLinkIcon').value = link && link.Icon ? link.Icon : '';
-
-            row.querySelector('.btnRemove').addEventListener('click', function () {
-                row.remove();
-            });
-
-            row.querySelector('.btnMoveUp').addEventListener('click', function () {
-                var previous = row.previousElementSibling;
-                if (previous) {
-                    row.parentNode.insertBefore(row, previous);
-                }
-            });
-
-            row.querySelector('.btnMoveDown').addEventListener('click', function () {
-                var next = row.nextElementSibling;
-                if (next) {
-                    row.parentNode.insertBefore(next, row);
-                }
-            });
-
-            document.querySelector('#menuLinksList').appendChild(row);
-        }
-
-        function renderMenuLinks(links) {
-            var list = document.querySelector('#menuLinksList');
-            list.innerHTML = '';
-
-            if (links && links.length) {
-                links.forEach(addMenuLinkRow);
-            } else {
-                addMenuLinkRow();
+                bindMenuLinkRowEvents(row);
+                document.querySelector('#MenuLinksConfigPage #menuLinksList').appendChild(row);
             }
-        }
 
-        document.querySelector('#btnAddLink').addEventListener('click', function () {
-            addMenuLinkRow();
-        });
+            function renderMenuLinks(links) {
+                var list = document.querySelector('#MenuLinksConfigPage #menuLinksList');
+                list.innerHTML = '';
 
-        document.querySelector('#MenuLinksConfigPage').addEventListener('pageshow', function () {
-            Dashboard.showLoadingMsg();
+                if (links && links.length) {
+                    links.forEach(addMenuLinkRow);
+                } else {
+                    addMenuLinkRow();
+                }
+            }
 
-            ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
-                renderMenuLinks(config.MenuLinks || []);
-                document.querySelector('#txtCustomWebConfigPath').value = config.CustomWebConfigPath || '';
-                Dashboard.hideLoadingMsg();
-            });
-        });
+            document.querySelector('#MenuLinksConfigPage').addEventListener('pageshow', function () {
+                Dashboard.showLoadingMsg();
 
-        document.querySelector('#MenuLinksConfigForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            Dashboard.showLoadingMsg();
+                var addButton = document.querySelector('#MenuLinksConfigPage #btnAddLink');
+                if (addButton && !addButton.dataset.bound) {
+                    addButton.dataset.bound = 'true';
+                    addButton.addEventListener('click', function () {
+                        addMenuLinkRow();
+                    });
+                }
 
-            ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
-                config.MenuLinks = getMenuLinksFromDom();
-                config.CustomWebConfigPath = document.querySelector('#txtCustomWebConfigPath').value.trim();
-
-                ApiClient.updatePluginConfiguration(MenuLinksConfig.pluginUniqueId, config).then(function (result) {
-                    Dashboard.processPluginConfigurationUpdateResult(result);
+                ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
+                    renderMenuLinks(config.MenuLinks || []);
+                    document.querySelector('#MenuLinksConfigPage #txtCustomWebConfigPath').value = config.CustomWebConfigPath || '';
+                    Dashboard.hideLoadingMsg();
                 });
             });
 
-            return false;
-        });
-    </script>
+            document.querySelector('#MenuLinksConfigForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+                Dashboard.showLoadingMsg();
+
+                ApiClient.getPluginConfiguration(MenuLinksConfig.pluginUniqueId).then(function (config) {
+                    config.MenuLinks = getMenuLinksFromDom();
+                    config.CustomWebConfigPath = document.querySelector('#MenuLinksConfigPage #txtCustomWebConfigPath').value.trim();
+
+                    ApiClient.updatePluginConfiguration(MenuLinksConfig.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    });
+                });
+
+                return false;
+            });
+        </script>
+    </div>
 </body>
 </html>
