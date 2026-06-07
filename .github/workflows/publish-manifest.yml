@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - manifest.json
+      - .github/workflows/publish-manifest.yml
   workflow_dispatch:
 
 permissions:
