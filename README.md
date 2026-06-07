@@ -120,3 +120,4 @@ This project follows the standard [Jellyfin plugin template](https://github.com/
 - `Configuration/configPage.html` — dashboard UI (embedded resource)
 - `manifest.json` — plugin repository manifest for Jellyfin's catalog
 - `.github/workflows/release.yml` — automated release + manifest updates
+"# jellyfin-plugin-menulinks" 
