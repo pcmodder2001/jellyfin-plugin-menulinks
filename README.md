@@ -56,6 +56,19 @@ Some Docker images mount `config.json` from a custom location. If the plugin can
 
 Links appear in the side menu below **Home**.
 
+## Server won't start after installing?
+
+A bad plugin can prevent Jellyfin from starting (502 Bad Gateway). To recover:
+
+1. **Stop** Jellyfin
+2. **Delete** the plugin folder:
+   - Windows: `%AppData%\jellyfin\plugins\Custom Menu Links\` (or similar folder name under `plugins\`)
+   - Docker: `/config/plugins/Custom Menu Links/`
+   - Linux: `/var/lib/jellyfin/plugins/Custom Menu Links/`
+3. **Start** Jellyfin again
+
+Then install **v1.0.0.1** or later, which fixes a startup crash caused by dependency injection.
+
 ## Plugin repository (install from Jellyfin catalog)
 
 To install from **Dashboard → Plugins → Catalog**, host this project on GitHub and add your repository URL in Jellyfin.

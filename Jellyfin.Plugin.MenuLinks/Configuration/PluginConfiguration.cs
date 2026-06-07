@@ -19,7 +19,7 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets the custom menu links to show in Jellyfin Web.
     /// </summary>
-    public MenuLink[] MenuLinks { get; set; }
+    public MenuLink[] MenuLinks { get; set; } = [];
 
     /// <summary>
     /// Gets or sets an optional override path to the web client config.json file.

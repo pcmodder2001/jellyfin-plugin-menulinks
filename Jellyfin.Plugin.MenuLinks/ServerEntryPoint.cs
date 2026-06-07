@@ -2,6 +2,7 @@ using Jellyfin.Plugin.MenuLinks.Configuration;
 using Jellyfin.Plugin.MenuLinks.Services;
 using MediaBrowser.Model.Plugins;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace Jellyfin.Plugin.MenuLinks;
 
@@ -10,68 +11,105 @@ namespace Jellyfin.Plugin.MenuLinks;
 /// </summary>
 public class ServerEntryPoint : IHostedService, IDisposable
 {
-    private readonly Plugin _plugin;
     private readonly WebConfigSyncService _syncService;
+    private readonly ILogger<ServerEntryPoint> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerEntryPoint"/> class.
     /// </summary>
-    /// <param name="plugin">The plugin instance.</param>
     /// <param name="syncService">The web config sync service.</param>
-    public ServerEntryPoint(Plugin plugin, WebConfigSyncService syncService)
+    /// <param name="logger">The logger.</param>
+    public ServerEntryPoint(WebConfigSyncService syncService, ILogger<ServerEntryPoint> logger)
     {
-        _plugin = plugin;
         _syncService = syncService;
+        _logger = logger;
     }
 
     /// <inheritdoc />
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _plugin.ConfigurationChanged += OnConfigurationChanged;
-        SyncOnStartup();
+        try
+        {
+            if (Plugin.Instance is null)
+            {
+                _logger.LogWarning("Custom Menu Links plugin instance is not available during startup");
+                return Task.CompletedTask;
+            }
+
+            Plugin.Instance.ConfigurationChanged += OnConfigurationChanged;
+            SyncOnStartup();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Custom Menu Links startup sync failed");
+        }
+
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _plugin.ConfigurationChanged -= OnConfigurationChanged;
+        if (Plugin.Instance is not null)
+        {
+            Plugin.Instance.ConfigurationChanged -= OnConfigurationChanged;
+        }
+
         return Task.CompletedTask;
     }
 
     private void SyncOnStartup()
     {
-        var config = _plugin.Configuration;
+        if (Plugin.Instance is null)
+        {
+            return;
+        }
 
-        if (config.MenuLinks.Length == 0)
+        var config = Plugin.Instance.Configuration;
+        var menuLinks = config.MenuLinks ?? [];
+
+        if (menuLinks.Length == 0)
         {
             var imported = _syncService.ReadMenuLinks(config.CustomWebConfigPath);
             if (imported is { Length: > 0 })
             {
                 config.MenuLinks = imported;
-                _plugin.SaveConfiguration();
+                Plugin.Instance.SaveConfiguration();
             }
         }
         else
         {
-            _syncService.SyncMenuLinks(config.MenuLinks, config.CustomWebConfigPath);
+            _syncService.SyncMenuLinks(menuLinks, config.CustomWebConfigPath);
         }
     }
 
     private void OnConfigurationChanged(object? sender, BasePluginConfiguration configuration)
     {
-        if (configuration is not PluginConfiguration pluginConfiguration)
+        try
         {
-            return;
-        }
+            if (configuration is not PluginConfiguration pluginConfiguration)
+            {
+                return;
+            }
 
-        _syncService.SyncMenuLinks(pluginConfiguration.MenuLinks, pluginConfiguration.CustomWebConfigPath);
+            _syncService.SyncMenuLinks(
+                pluginConfiguration.MenuLinks ?? [],
+                pluginConfiguration.CustomWebConfigPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Custom Menu Links configuration sync failed");
+        }
     }
 
     /// <inheritdoc />
     public void Dispose()
     {
-        _plugin.ConfigurationChanged -= OnConfigurationChanged;
+        if (Plugin.Instance is not null)
+        {
+            Plugin.Instance.ConfigurationChanged -= OnConfigurationChanged;
+        }
+
         GC.SuppressFinalize(this);
     }
 }
