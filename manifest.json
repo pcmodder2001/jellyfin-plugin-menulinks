@@ -8,12 +8,12 @@
     "category": "General",
     "versions": [
       {
-        "version": "1.0.0.9",
-        "changelog": "Release 1.0.0.9 for Jellyfin 10.11",
+        "version": "1.0.0.10",
+        "changelog": "Release 1.0.0.10 for Jellyfin 10.11",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.9/custom-menu-links_1.0.0.9_10.11.zip",
-        "checksum": "a43e8a50dcd1dc02b8bf27e3acdcc247",
-        "timestamp": "2026-06-07T18:56:00Z"
+        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.10/custom-menu-links_1.0.0.10_10.11.zip",
+        "checksum": "e44617c3825c0660aa59f241ce3e32ac",
+        "timestamp": "2026-06-07T19:02:21Z"
       }
     ]
   },
@@ -26,12 +26,12 @@
     "category": "General",
     "versions": [
       {
-        "version": "1.0.0.9",
-        "changelog": "Release 1.0.0.9 for Jellyfin 10.11",
+        "version": "1.0.0.10",
+        "changelog": "Release 1.0.0.10 for Jellyfin 10.11",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.9/custom-login-buttons_1.0.0.9_10.11.zip",
-        "checksum": "db122bfec3d06ca3c3b650cdc48b57c7",
-        "timestamp": "2026-06-07T18:56:00Z"
+        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.10/custom-login-buttons_1.0.0.10_10.11.zip",
+        "checksum": "801af1420e6605ff169bdc12cc77ed64",
+        "timestamp": "2026-06-07T19:02:21Z"
       }
     ]
   },
@@ -44,12 +44,12 @@
     "category": "General",
     "versions": [
       {
-        "version": "1.0.0.9",
-        "changelog": "Release 1.0.0.9 for Jellyfin 10.11",
+        "version": "1.0.0.10",
+        "changelog": "Release 1.0.0.10 for Jellyfin 10.11",
         "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.9/account-portal_1.0.0.9_10.11.zip",
-        "checksum": "e7ba34069d1ce2bff780e0e45e9b2318",
-        "timestamp": "2026-06-07T18:56:00Z"
+        "sourceUrl": "https://github.com/pcmodder2001/jellyfin-plugin-menulinks/releases/download/v1.0.0.10/account-portal_1.0.0.10_10.11.zip",
+        "checksum": "47966cc4f890927b67af108077d5b5ae",
+        "timestamp": "2026-06-07T19:02:21Z"
       }
     ]
   }
